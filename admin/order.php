@@ -54,7 +54,7 @@ require BASE_PATH . '/includes/admin_header.php';
             <h2>Customer</h2>
             <div class="summary-table">
                 <div><span>Name</span><strong><?= e($order['customer_name']) ?></strong></div>
-                <div><span>Phone</span><strong><?= e($order['customer_phone']) ?></strong></div>
+                <div><span>Phone</span><strong><?= e(display_phone((string)$order['customer_phone'])) ?></strong></div>
                 <div><span>Area</span><strong><?= e($order['district_area']) ?></strong></div>
                 <div><span>Address</span><strong><?= e($order['customer_address']) ?></strong></div>
             </div>

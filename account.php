@@ -35,7 +35,10 @@ require BASE_PATH . '/includes/header.php';
         </label>
         <label>
             Phone
-            <input type="tel" name="phone" value="<?= e($_POST['phone'] ?? '') ?>" required placeholder="01XXXXXXXXX">
+            <span class="phone-field">
+                <span class="phone-prefix">+88</span>
+                <input type="tel" name="phone" value="<?= e(normalize_phone((string)($_POST['phone'] ?? ''))) ?>" inputmode="numeric" pattern="01[3-9][0-9]{8}" maxlength="11" data-phone-input required placeholder="01XXXXXXXXX">
+            </span>
         </label>
         <button class="button button-primary button-full" type="submit">View Order</button>
     </form>
@@ -83,4 +86,3 @@ require BASE_PATH . '/includes/header.php';
 </section>
 
 <?php require BASE_PATH . '/includes/footer.php'; ?>
-

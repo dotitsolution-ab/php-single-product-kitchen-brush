@@ -123,18 +123,28 @@ function money(mixed $amount): string
 function normalize_phone(string $phone): string
 {
     $digits = preg_replace('/\D+/', '', $phone) ?? '';
-    if (strlen($digits) === 13 && str_starts_with($digits, '880')) {
-        return '0' . substr($digits, 3);
+
+    if (str_starts_with($digits, '00880')) {
+        $digits = '0' . substr($digits, 5);
+    } elseif (str_starts_with($digits, '880')) {
+        $digits = '0' . substr($digits, 3);
+    } elseif (str_starts_with($digits, '88')) {
+        $digits = substr($digits, 2);
+    } elseif (str_starts_with($digits, '1')) {
+        $digits = '0' . $digits;
     }
-    if (strlen($digits) === 12 && str_starts_with($digits, '88')) {
-        return substr($digits, 2);
-    }
-    return $digits;
+
+    return substr($digits, 0, 11);
 }
 
 function valid_bd_phone(string $phone): bool
 {
     return preg_match('/^01[3-9]\d{8}$/', normalize_phone($phone)) === 1;
+}
+
+function display_phone(string $phone): string
+{
+    return normalize_phone($phone);
 }
 
 function status_options(): array

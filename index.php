@@ -74,7 +74,10 @@ require BASE_PATH . '/includes/header.php';
             </label>
             <label>
                 Phone
-                <input type="tel" name="phone" value="<?= e(old('phone')) ?>" autocomplete="tel" required placeholder="01XXXXXXXXX">
+                <span class="phone-field">
+                    <span class="phone-prefix">+88</span>
+                    <input type="tel" name="phone" value="<?= e(normalize_phone(old('phone'))) ?>" autocomplete="tel" inputmode="numeric" pattern="01[3-9][0-9]{8}" maxlength="11" data-phone-input required placeholder="01XXXXXXXXX">
+                </span>
             </label>
             <label>
                 Address
@@ -110,4 +113,3 @@ require BASE_PATH . '/includes/header.php';
 <?php
 clear_old();
 require BASE_PATH . '/includes/footer.php';
-

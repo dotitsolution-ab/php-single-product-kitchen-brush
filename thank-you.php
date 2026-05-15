@@ -20,7 +20,7 @@ require BASE_PATH . '/includes/header.php';
             <p>Your order ID is <strong><?= e($order['order_number']) ?></strong>. Please keep it for order lookup and tracking.</p>
             <div class="summary-table">
                 <div><span>Name</span><strong><?= e($order['customer_name']) ?></strong></div>
-                <div><span>Phone</span><strong><?= e($order['customer_phone']) ?></strong></div>
+                <div><span>Phone</span><strong><?= e(display_phone((string)$order['customer_phone'])) ?></strong></div>
                 <div><span>Total</span><strong><?= e(money($order['total'])) ?></strong></div>
                 <div><span>Payment</span><strong><?= e($order['payment_method']) ?></strong></div>
             </div>

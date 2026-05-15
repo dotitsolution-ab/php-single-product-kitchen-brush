@@ -53,7 +53,7 @@ require BASE_PATH . '/includes/admin_header.php';
                 <?php foreach (array_slice($latestOrders, 0, 10) as $order): ?>
                     <tr>
                         <td><?= e($order['order_number']) ?></td>
-                        <td><?= e($order['customer_name']) ?><br><span class="muted"><?= e($order['customer_phone']) ?></span></td>
+                        <td><?= e($order['customer_name']) ?><br><span class="muted"><?= e(display_phone((string)$order['customer_phone'])) ?></span></td>
                         <td><?= e(money($order['total'])) ?></td>
                         <td><span class="<?= e(status_class($order['status'])) ?>"><?= e($order['status']) ?></span></td>
                         <td><a href="<?= e(base_url('admin/order.php?id=' . $order['id'])) ?>">Open</a></td>

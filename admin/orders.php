@@ -45,7 +45,7 @@ require BASE_PATH . '/includes/admin_header.php';
                 <?php foreach ($orders as $order): ?>
                     <tr>
                         <td><?= e($order['order_number']) ?></td>
-                        <td><?= e($order['customer_name']) ?><br><span class="muted"><?= e($order['customer_phone']) ?></span></td>
+                        <td><?= e($order['customer_name']) ?><br><span class="muted"><?= e(display_phone((string)$order['customer_phone'])) ?></span></td>
                         <td><?= e(money($order['total'])) ?></td>
                         <td><span class="<?= e(status_class($order['status'])) ?>"><?= e($order['status']) ?></span></td>
                         <td><?= e(date('d M Y', strtotime((string)$order['created_at']))) ?></td>

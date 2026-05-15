@@ -219,9 +219,10 @@ function list_orders(array $filters = []): array
     if ($query !== '') {
         $where[] = '(order_number LIKE :query_order OR customer_name LIKE :query_customer OR customer_phone LIKE :query_phone)';
         $likeQuery = '%' . $query . '%';
+        $phoneQuery = normalize_phone($query);
         $params['query_order'] = $likeQuery;
         $params['query_customer'] = $likeQuery;
-        $params['query_phone'] = $likeQuery;
+        $params['query_phone'] = '%' . ($phoneQuery !== '' ? $phoneQuery : $query) . '%';
     }
 
     $sql = 'SELECT * FROM orders';

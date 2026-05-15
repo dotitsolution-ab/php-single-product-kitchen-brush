@@ -42,7 +42,7 @@ if (!$order) {
         <div>
             <h2>Bill To</h2>
             <p><strong><?= e($order['customer_name']) ?></strong></p>
-            <p><?= e($order['customer_phone']) ?></p>
+            <p><?= e(display_phone((string)$order['customer_phone'])) ?></p>
             <p><?= e($order['customer_address']) ?>, <?= e($order['district_area']) ?></p>
         </div>
         <div>
@@ -85,4 +85,3 @@ if (!$order) {
 </main>
 </body>
 </html>
-
