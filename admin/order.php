@@ -16,6 +16,9 @@ if (is_post()) {
         if ($action === 'status') {
             update_order_status($orderId, (string)($_POST['status'] ?? 'Pending'));
             flash('success', 'Order status updated.');
+        } elseif ($action === 'customer_email') {
+            send_order_customer_email_once($orderId);
+            flash('success', 'Customer email sent.');
         } elseif ($action === 'shipment') {
             save_manual_shipment($orderId, $_POST);
             flash('success', 'Courier details saved.');
@@ -55,6 +58,7 @@ require BASE_PATH . '/includes/admin_header.php';
             <div class="summary-table">
                 <div><span>Name</span><strong><?= e($order['customer_name']) ?></strong></div>
                 <div><span>Phone</span><strong><?= e(display_phone((string)$order['customer_phone'])) ?></strong></div>
+                <div><span>Email</span><strong><?= e((string)($order['customer_email'] ?? 'Not provided')) ?></strong></div>
                 <div><span>Area</span><strong><?= e($order['district_area']) ?></strong></div>
                 <div><span>Address</span><strong><?= e($order['customer_address']) ?></strong></div>
             </div>
@@ -135,6 +139,14 @@ require BASE_PATH . '/includes/admin_header.php';
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="steadfast">
             <button class="button button-primary button-full" type="submit">Create Steadfast Shipment</button>
+        </form>
+
+        <form class="content-panel" method="post">
+            <h2>Customer Email</h2>
+            <p class="muted">Sends the customer order email once using the saved template.</p>
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="customer_email">
+            <button class="button button-secondary button-full" type="submit">Send Customer Email</button>
         </form>
     </div>
 </section>

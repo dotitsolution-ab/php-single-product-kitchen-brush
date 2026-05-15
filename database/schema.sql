@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS customers (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
     phone VARCHAR(20) NOT NULL UNIQUE,
+    email VARCHAR(190) NULL,
     address VARCHAR(500) NULL,
     district_area VARCHAR(120) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_id INT UNSIGNED NOT NULL,
     customer_name VARCHAR(120) NOT NULL,
     customer_phone VARCHAR(20) NOT NULL,
+    customer_email VARCHAR(190) NULL,
     customer_address VARCHAR(500) NOT NULL,
     district_area VARCHAR(120) NOT NULL,
     delivery_note TEXT NULL,
@@ -116,6 +118,21 @@ CREATE TABLE IF NOT EXISTS security_events (
     INDEX idx_security_events_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS email_logs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id INT UNSIGNED NULL,
+    email_type VARCHAR(60) NOT NULL,
+    recipient_email VARCHAR(190) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'sent',
+    provider_message_id VARCHAR(120) NULL,
+    error_message TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_email_logs_order_type (order_id, email_type),
+    INDEX idx_email_logs_status (status),
+    CONSTRAINT fk_email_logs_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO products
     (name, slug, tagline, description, highlights, price, compare_price, delivery_charge, stock, image_url, is_active)
 VALUES
@@ -145,5 +162,19 @@ INSERT INTO settings (key_name, value_text) VALUES
     ('google_site_verification', ''),
     ('steadfast_base_url', 'https://portal.steadfast.com.bd/api/v1'),
     ('steadfast_api_key', ''),
-    ('steadfast_secret_key', '')
+    ('steadfast_secret_key', ''),
+    ('email_enabled', '0'),
+    ('mailjet_api_key', ''),
+    ('mailjet_secret_key', ''),
+    ('mail_from_email', 'support@example.com'),
+    ('mail_from_name', 'Single Product Store'),
+    ('admin_notification_email', 'admin@example.com'),
+    ('admin_order_email_enabled', '1'),
+    ('customer_order_email_enabled', '1'),
+    ('admin_order_email_subject', 'New order {{order_number}} - {{site_name}}'),
+    ('admin_order_email_html', ''),
+    ('admin_order_email_text', ''),
+    ('customer_order_email_subject', 'আপনার অর্ডারটি গ্রহণ করা হয়েছে - {{order_number}}'),
+    ('customer_order_email_html', ''),
+    ('customer_order_email_text', '')
 ON DUPLICATE KEY UPDATE value_text = VALUES(value_text);

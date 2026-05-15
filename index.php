@@ -174,6 +174,9 @@ require BASE_PATH . '/includes/header.php';
                     </span>
                 </label>
                 <label>
+                    <input type="email" name="email" value="<?= e(old('email')) ?>" autocomplete="email" maxlength="190" placeholder="ইমেইল (অপশনাল)">
+                </label>
+                <label>
                     <textarea name="address" rows="3" required maxlength="500" placeholder="সম্পূর্ণ ঠিকানা"><?= e(old('address')) ?></textarea>
                 </label>
                 <input type="hidden" name="delivery_note" value="">

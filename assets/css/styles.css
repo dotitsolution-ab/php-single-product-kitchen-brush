@@ -610,6 +610,7 @@ select:focus {
     min-height: 100vh;
     display: grid;
     grid-template-columns: 250px minmax(0, 1fr);
+    background: #f4f6f3;
 }
 
 .admin-sidebar {
@@ -617,7 +618,7 @@ select:focus {
     top: 0;
     height: 100vh;
     border-right: 1px solid var(--line);
-    background: #fff;
+    background: #ffffff;
     padding: 24px;
 }
 
@@ -632,14 +633,15 @@ select:focus {
     padding: 10px 12px;
 }
 
-.admin-nav a:hover {
+.admin-nav a:hover,
+.admin-nav a:focus {
     color: var(--ink);
     background: #eef0ed;
 }
 
 .admin-main {
     min-width: 0;
-    padding: 24px;
+    padding: 28px;
 }
 
 .admin-topbar {
@@ -648,9 +650,54 @@ select:focus {
     margin-bottom: 20px;
 }
 
+.admin-topbar > div {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 8px 14px;
+    background: #fff;
+}
+
 .admin-section {
     display: grid;
     gap: 20px;
+}
+
+.settings-card {
+    display: grid;
+    gap: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+    background: #fff;
+}
+
+.settings-card h2 {
+    margin: 0;
+}
+
+.email-template-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.toggle-line {
+    display: flex;
+    grid-template-columns: none;
+    align-items: center;
+    gap: 10px;
+}
+
+.toggle-line input {
+    width: auto;
+}
+
+.template-vars {
+    margin: 0;
+    color: var(--muted);
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+    line-height: 1.8;
 }
 
 .stats-grid {
@@ -759,6 +806,7 @@ select:focus {
 
     .form-grid,
     .stats-grid,
+    .email-template-grid,
     .feature-editor-row,
     .usage-editor-row,
     .reason-editor-row {

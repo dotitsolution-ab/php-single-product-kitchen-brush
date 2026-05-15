@@ -9,6 +9,84 @@ function active_product(): ?array
     return $product ?: null;
 }
 
+function ensure_email_schema(): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    $pdo = db();
+    if (!db_table_exists('orders') || !db_table_exists('customers')) {
+        $checked = true;
+        return;
+    }
+
+    if (!db_column_exists('customers', 'email')) {
+        $pdo->exec('ALTER TABLE customers ADD email VARCHAR(190) NULL AFTER phone');
+    }
+    if (!db_column_exists('orders', 'customer_email')) {
+        $pdo->exec('ALTER TABLE orders ADD customer_email VARCHAR(190) NULL AFTER customer_phone');
+    }
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS email_logs (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            order_id INT UNSIGNED NULL,
+            email_type VARCHAR(60) NOT NULL,
+            recipient_email VARCHAR(190) NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            status VARCHAR(30) NOT NULL DEFAULT 'sent',
+            provider_message_id VARCHAR(120) NULL,
+            error_message TEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_email_logs_order_type (order_id, email_type),
+            INDEX idx_email_logs_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    $checked = true;
+}
+
+function db_table_exists(string $table): bool
+{
+    $stmt = db()->prepare('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name');
+    $stmt->execute(['table_name' => $table]);
+    return (int)$stmt->fetchColumn() > 0;
+}
+
+function db_column_exists(string $table, string $column): bool
+{
+    $stmt = db()->prepare(
+        'SELECT COUNT(*) FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name'
+    );
+    $stmt->execute([
+        'table_name' => $table,
+        'column_name' => $column,
+    ]);
+    return (int)$stmt->fetchColumn() > 0;
+}
+
+function email_defaults(): array
+{
+    return [
+        'admin_order_email_subject' => 'New order {{order_number}} - {{site_name}}',
+        'admin_order_email_html' => '<h2>New order {{order_number}}</h2><p><strong>Customer:</strong> {{customer_name}}<br><strong>Phone:</strong> {{customer_phone}}<br><strong>Email:</strong> {{customer_email}}<br><strong>Area:</strong> {{district_area}}</p>{{items_table}}<p><strong>Total:</strong> {{total}}</p><p><a href="{{admin_order_url}}">Open order in admin</a></p>',
+        'admin_order_email_text' => "New order {{order_number}}\nCustomer: {{customer_name}}\nPhone: {{customer_phone}}\nEmail: {{customer_email}}\nArea: {{district_area}}\nTotal: {{total}}\nAdmin: {{admin_order_url}}",
+        'customer_order_email_subject' => 'আপনার অর্ডারটি গ্রহণ করা হয়েছে - {{order_number}}',
+        'customer_order_email_html' => '<h2>ধন্যবাদ {{customer_name}}</h2><p>আপনার অর্ডারটি গ্রহণ করা হয়েছে। আমাদের টিম দ্রুত ফোন করে কনফার্ম করবে।</p><p><strong>Order ID:</strong> {{order_number}}<br><strong>Total:</strong> {{total}}<br><strong>Payment:</strong> {{payment_method}}</p>{{items_table}}<p>অর্ডার ট্র্যাক করতে: <a href="{{track_url}}">{{track_url}}</a></p>',
+        'customer_order_email_text' => "ধন্যবাদ {{customer_name}}\nআপনার অর্ডারটি গ্রহণ করা হয়েছে।\nOrder ID: {{order_number}}\nTotal: {{total}}\nPayment: {{payment_method}}\nTrack: {{track_url}}",
+    ];
+}
+
+function email_template_value(string $key): string
+{
+    $defaults = email_defaults();
+    $value = setting($key, (string)($defaults[$key] ?? ''));
+    return $value !== '' ? $value : (string)($defaults[$key] ?? '');
+}
+
 function product_highlights(array $product): array
 {
     $lines = preg_split('/\r\n|\r|\n/', (string)($product['highlights'] ?? '')) ?: [];
@@ -193,6 +271,8 @@ function seed_kitchen_brush_content(): void
 
 function create_cod_order(array $data): array
 {
+    ensure_email_schema();
+
     $product = active_product();
     if (!$product) {
         throw new RuntimeException('No active product is available.');
@@ -200,6 +280,7 @@ function create_cod_order(array $data): array
 
     $name = trim((string)($data['name'] ?? ''));
     $phone = normalize_phone((string)($data['phone'] ?? ''));
+    $email = strtolower(trim((string)($data['email'] ?? '')));
     $address = trim((string)($data['address'] ?? ''));
     $deliveryArea = (string)($data['delivery_area'] ?? 'inside_dhaka');
     $deliveryOptions = delivery_options($product);
@@ -216,6 +297,9 @@ function create_cod_order(array $data): array
     if (!valid_bd_phone($phone)) {
         throw new InvalidArgumentException('Please enter a valid Bangladesh phone number.');
     }
+    if ($email !== '' && (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190)) {
+        throw new InvalidArgumentException('Please enter a valid email address.');
+    }
     if ($address === '' || strlen($address) > 500) {
         throw new InvalidArgumentException('Please enter a valid delivery address.');
     }
@@ -231,20 +315,21 @@ function create_cod_order(array $data): array
 
     $pdo->beginTransaction();
     try {
-        $customerId = upsert_customer($name, $phone, $address, $districtArea);
+        $customerId = upsert_customer($name, $phone, $email, $address, $districtArea);
         $orderNumber = unique_order_number();
 
         $stmt = $pdo->prepare(
             'INSERT INTO orders
-            (order_number, customer_id, customer_name, customer_phone, customer_address, district_area, delivery_note, subtotal, delivery_charge, total, payment_method, status)
+            (order_number, customer_id, customer_name, customer_phone, customer_email, customer_address, district_area, delivery_note, subtotal, delivery_charge, total, payment_method, status)
             VALUES
-            (:order_number, :customer_id, :customer_name, :customer_phone, :customer_address, :district_area, :delivery_note, :subtotal, :delivery_charge, :total, :payment_method, :status)'
+            (:order_number, :customer_id, :customer_name, :customer_phone, :customer_email, :customer_address, :district_area, :delivery_note, :subtotal, :delivery_charge, :total, :payment_method, :status)'
         );
         $stmt->execute([
             'order_number' => $orderNumber,
             'customer_id' => $customerId,
             'customer_name' => $name,
             'customer_phone' => $phone,
+            'customer_email' => $email !== '' ? $email : null,
             'customer_address' => $address,
             'district_area' => $districtArea,
             'delivery_note' => $deliveryNote,
@@ -280,25 +365,36 @@ function create_cod_order(array $data): array
         }
 
         $pdo->commit();
-        return order_with_items_by_id($orderId) ?? [];
+        $order = order_with_items_by_id($orderId) ?? [];
+        try {
+            send_order_created_emails($order);
+        } catch (Throwable) {
+            // Email delivery must not block a successful COD order.
+        }
+        return $order;
     } catch (Throwable $exception) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         throw $exception;
     }
 }
 
-function upsert_customer(string $name, string $phone, string $address, string $districtArea): int
+function upsert_customer(string $name, string $phone, string $email, string $address, string $districtArea): int
 {
+    ensure_email_schema();
+
     $stmt = db()->prepare('SELECT id FROM customers WHERE phone = :phone LIMIT 1');
     $stmt->execute(['phone' => $phone]);
     $customer = $stmt->fetch();
 
     if ($customer) {
         $update = db()->prepare(
-            'UPDATE customers SET name = :name, address = :address, district_area = :district_area, updated_at = NOW() WHERE id = :id'
+            'UPDATE customers SET name = :name, email = :email, address = :address, district_area = :district_area, updated_at = NOW() WHERE id = :id'
         );
         $update->execute([
             'name' => $name,
+            'email' => $email !== '' ? $email : null,
             'address' => $address,
             'district_area' => $districtArea,
             'id' => (int)$customer['id'],
@@ -307,11 +403,12 @@ function upsert_customer(string $name, string $phone, string $address, string $d
     }
 
     $insert = db()->prepare(
-        'INSERT INTO customers (name, phone, address, district_area) VALUES (:name, :phone, :address, :district_area)'
+        'INSERT INTO customers (name, phone, email, address, district_area) VALUES (:name, :phone, :email, :address, :district_area)'
     );
     $insert->execute([
         'name' => $name,
         'phone' => $phone,
+        'email' => $email !== '' ? $email : null,
         'address' => $address,
         'district_area' => $districtArea,
     ]);
@@ -380,6 +477,255 @@ function order_shipment(int $orderId): ?array
     $stmt->execute(['order_id' => $orderId]);
     $shipment = $stmt->fetch();
     return $shipment ?: null;
+}
+
+function send_order_created_emails(array $order): void
+{
+    if (!$order || setting('email_enabled', '0') !== '1') {
+        return;
+    }
+
+    if (setting('admin_order_email_enabled', '1') === '1') {
+        try {
+            send_order_email(
+                $order,
+                'admin_order_created',
+                setting('admin_notification_email', setting('support_email')),
+                setting('site_name', 'Admin'),
+                'admin_order_email_subject',
+                'admin_order_email_html',
+                'admin_order_email_text'
+            );
+        } catch (Throwable) {
+            // Logged inside send_order_email.
+        }
+    }
+
+    if (setting('customer_order_email_enabled', '1') === '1') {
+        try {
+            send_customer_order_email($order);
+        } catch (Throwable) {
+            // Logged inside send_order_email.
+        }
+    }
+}
+
+function send_order_customer_email_once(int $orderId): void
+{
+    $order = order_with_items_by_id($orderId);
+    if (!$order) {
+        throw new InvalidArgumentException('Order not found.');
+    }
+
+    send_customer_order_email($order, true);
+}
+
+function send_customer_order_email(array $order, bool $throwIfAlreadySent = false): bool
+{
+    $orderId = (int)($order['id'] ?? 0);
+    $email = trim((string)($order['customer_email'] ?? ''));
+    if ($email === '') {
+        if ($throwIfAlreadySent) {
+            throw new RuntimeException('This order does not have a customer email address.');
+        }
+        return false;
+    }
+
+    if (email_log_success_exists($orderId, 'customer_order_created')) {
+        if ($throwIfAlreadySent) {
+            throw new RuntimeException('Customer order email was already sent once.');
+        }
+        return false;
+    }
+
+    send_order_email(
+        $order,
+        'customer_order_created',
+        $email,
+        (string)($order['customer_name'] ?? ''),
+        'customer_order_email_subject',
+        'customer_order_email_html',
+        'customer_order_email_text'
+    );
+
+    return true;
+}
+
+function send_order_email(
+    array $order,
+    string $type,
+    string $toEmail,
+    string $toName,
+    string $subjectKey,
+    string $htmlKey,
+    string $textKey
+): void {
+    ensure_email_schema();
+
+    $toEmail = strtolower(trim($toEmail));
+    $subject = render_order_email_template(email_template_value($subjectKey), $order, false);
+    $html = render_order_email_template(email_template_value($htmlKey), $order, true);
+    $text = render_order_email_template(email_template_value($textKey), $order, false);
+    if (trim(strip_tags($html)) === '') {
+        $html = nl2br(e($text));
+    }
+    $html = email_html_shell($subject, $html);
+    if (trim($text) === '') {
+        $text = trim(strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $html)));
+    }
+
+    try {
+        $response = (new MailjetMailer())->send($toEmail, $toName, $subject, $html, $text);
+        log_email_event(
+            (int)($order['id'] ?? 0),
+            $type,
+            $toEmail,
+            $subject,
+            'sent',
+            extract_mailjet_message_id($response),
+            null
+        );
+    } catch (Throwable $exception) {
+        log_email_event(
+            (int)($order['id'] ?? 0),
+            $type,
+            $toEmail,
+            $subject,
+            'failed',
+            null,
+            $exception->getMessage()
+        );
+        throw $exception;
+    }
+}
+
+function render_order_email_template(string $template, array $order, bool $html): string
+{
+    $values = order_email_variables($order, $html);
+    return strtr($template, $values);
+}
+
+function order_email_variables(array $order, bool $html): array
+{
+    $itemsTable = $html ? order_items_html_table($order) : order_items_text_lines($order);
+    $trackUrl = absolute_base_url('track.php?order=' . urlencode((string)($order['order_number'] ?? '')));
+    $adminOrderUrl = absolute_base_url('admin/order.php?id=' . urlencode((string)($order['id'] ?? '')));
+    $data = [
+        'site_name' => setting('site_name', app_config('app.name', 'Store')),
+        'support_email' => setting('support_email'),
+        'contact_phone' => setting('contact_phone'),
+        'order_number' => (string)($order['order_number'] ?? ''),
+        'customer_name' => (string)($order['customer_name'] ?? ''),
+        'customer_phone' => display_phone((string)($order['customer_phone'] ?? '')),
+        'customer_email' => (string)($order['customer_email'] ?? ''),
+        'customer_address' => (string)($order['customer_address'] ?? ''),
+        'district_area' => (string)($order['district_area'] ?? ''),
+        'delivery_note' => (string)($order['delivery_note'] ?? ''),
+        'payment_method' => (string)($order['payment_method'] ?? 'COD'),
+        'status' => (string)($order['status'] ?? ''),
+        'subtotal' => taka($order['subtotal'] ?? 0),
+        'delivery_charge' => taka($order['delivery_charge'] ?? 0),
+        'total' => taka($order['total'] ?? 0),
+        'track_url' => $trackUrl,
+        'admin_order_url' => $adminOrderUrl,
+        'items_table' => $itemsTable,
+    ];
+
+    $variables = [];
+    foreach ($data as $key => $value) {
+        $variables['{{' . $key . '}}'] = $html && $key !== 'items_table' ? e($value) : $value;
+    }
+
+    return $variables;
+}
+
+function order_items_html_table(array $order): string
+{
+    $rows = '';
+    foreach (($order['items'] ?? []) as $item) {
+        $rows .= '<tr><td style="padding:10px;border-bottom:1px solid #e5e7eb;">' . e($item['product_name'] ?? '') . '</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center;">' . e((string)($item['quantity'] ?? '')) . '</td><td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:right;">' . e(taka($item['line_total'] ?? 0)) . '</td></tr>';
+    }
+
+    return '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:16px 0;border:1px solid #e5e7eb;"><thead><tr><th align="left" style="padding:10px;background:#f9fafb;border-bottom:1px solid #e5e7eb;">Product</th><th style="padding:10px;background:#f9fafb;border-bottom:1px solid #e5e7eb;">Qty</th><th align="right" style="padding:10px;background:#f9fafb;border-bottom:1px solid #e5e7eb;">Total</th></tr></thead><tbody>' . $rows . '</tbody></table>';
+}
+
+function order_items_text_lines(array $order): string
+{
+    $lines = [];
+    foreach (($order['items'] ?? []) as $item) {
+        $lines[] = '- ' . ($item['product_name'] ?? '') . ' x ' . ($item['quantity'] ?? '') . ' = ' . taka($item['line_total'] ?? 0);
+    }
+
+    return implode("\n", $lines);
+}
+
+function email_html_shell(string $subject, string $body): string
+{
+    return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f6f7f9;font-family:Arial,Nirmala UI,sans-serif;color:#111827;"><div style="max-width:640px;margin:0 auto;padding:24px;"><div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:24px;"><h1 style="margin:0 0 16px;font-size:22px;color:#111827;">' . e($subject) . '</h1>' . $body . '</div><p style="color:#6b7280;font-size:12px;text-align:center;">' . e(setting('site_name', 'Store')) . '</p></div></body></html>';
+}
+
+function email_log_success_exists(int $orderId, string $type): bool
+{
+    ensure_email_schema();
+    $stmt = db()->prepare('SELECT id FROM email_logs WHERE order_id = :order_id AND email_type = :email_type AND status = :status LIMIT 1');
+    $stmt->execute([
+        'order_id' => $orderId,
+        'email_type' => $type,
+        'status' => 'sent',
+    ]);
+    return (bool)$stmt->fetchColumn();
+}
+
+function log_email_event(int $orderId, string $type, string $recipient, string $subject, string $status, ?string $messageId, ?string $error): void
+{
+    ensure_email_schema();
+    $stmt = db()->prepare(
+        'INSERT INTO email_logs (order_id, email_type, recipient_email, subject, status, provider_message_id, error_message)
+         VALUES (:order_id, :email_type, :recipient_email, :subject, :status, :provider_message_id, :error_message)'
+    );
+    $stmt->execute([
+        'order_id' => $orderId > 0 ? $orderId : null,
+        'email_type' => $type,
+        'recipient_email' => $recipient,
+        'subject' => function_exists('mb_substr') ? mb_substr($subject, 0, 255) : substr($subject, 0, 255),
+        'status' => $status,
+        'provider_message_id' => $messageId,
+        'error_message' => $error,
+    ]);
+}
+
+function list_email_logs(int $limit = 20): array
+{
+    ensure_email_schema();
+    $limit = max(1, min(100, $limit));
+    $stmt = db()->query(
+        'SELECT email_logs.*, orders.order_number
+         FROM email_logs
+         LEFT JOIN orders ON orders.id = email_logs.order_id
+         ORDER BY email_logs.created_at DESC
+         LIMIT ' . $limit
+    );
+
+    return $stmt->fetchAll();
+}
+
+function extract_mailjet_message_id(array $response): ?string
+{
+    $message = $response['Messages'][0]['To'][0] ?? [];
+    $id = $message['MessageUUID'] ?? $message['MessageID'] ?? null;
+    return $id === null ? null : (string)$id;
+}
+
+function absolute_base_url(string $path): string
+{
+    $base = rtrim((string)app_config('app.base_url', ''), '/');
+    if ($base === '') {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = (string)($_SERVER['HTTP_HOST'] ?? '');
+        $base = $host !== '' ? $scheme . '://' . $host : '';
+    }
+
+    return $base . '/' . ltrim($path, '/');
 }
 
 function list_orders(array $filters = []): array
