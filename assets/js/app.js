@@ -61,9 +61,10 @@ function updateOrderSummary(form) {
     var unitPrice = Number(form.getAttribute('data-unit-price') || 0);
     var insideCharge = Number(form.getAttribute('data-inside-charge') || 0);
     var outsideCharge = Number(form.getAttribute('data-outside-charge') || 0);
-    var quantityInput = form.querySelector('input[name="quantity"]:checked');
+    var checkedQuantityInput = form.querySelector('input[name="quantity"]:checked');
+    var quantityInput = checkedQuantityInput || form.querySelector('input[name="quantity"]');
     var deliveryInput = form.querySelector('input[name="delivery_area"]:checked');
-    var quantity = quantityInput ? Number(quantityInput.value || 1) : 1;
+    var quantity = quantityInput ? Math.max(1, Number(quantityInput.value || 1)) : 1;
     var deliveryCharge = deliveryInput && deliveryInput.value === 'outside_dhaka' ? outsideCharge : insideCharge;
     var subtotal = unitPrice * quantity;
     var root = form.closest('.funnel-order') || document;
@@ -89,16 +90,61 @@ function updateOrderSummary(form) {
 
 document.addEventListener('change', function (event) {
     var input = event.target;
-    if (!input || !input.matches('[data-order-form] input[type="radio"]')) {
+    if (!input || !input.matches('[data-order-form] input[name="delivery_area"], [data-order-form] input[name="quantity"]')) {
         return;
     }
 
     updateOrderSummary(input.closest('[data-order-form]'));
 });
 
+document.addEventListener('input', function (event) {
+    var input = event.target;
+    if (!input || !input.matches('[data-order-form] input[name="quantity"]')) {
+        return;
+    }
+
+    if (Number(input.value || 0) < 1) {
+        input.value = '1';
+    }
+    updateOrderSummary(input.closest('[data-order-form]'));
+});
+
+document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-qty-decrease], [data-qty-increase]');
+    if (!button) {
+        return;
+    }
+
+    var stepper = button.closest('[data-quantity-stepper]');
+    var input = stepper ? stepper.querySelector('[data-qty-input]') : null;
+    if (!input) {
+        return;
+    }
+
+    var min = Number(input.getAttribute('min') || 1);
+    var max = Number(input.getAttribute('max') || 9999);
+    var direction = button.matches('[data-qty-increase]') ? 1 : -1;
+    var next = Math.min(max, Math.max(min, Number(input.value || min) + direction));
+    input.value = String(next);
+    updateOrderSummary(input.closest('[data-order-form]'));
+});
+
 document.querySelectorAll('[data-order-form]').forEach(function (form) {
     updateOrderSummary(form);
 });
+
+if ('IntersectionObserver' in window) {
+    var stickyCta = document.querySelector('.sticky-order-cta');
+    var checkout = document.getElementById('checkout');
+    if (stickyCta && checkout) {
+        var observer = new IntersectionObserver(function (entries) {
+            stickyCta.classList.toggle('is-hidden', entries[0].isIntersecting);
+        }, {
+            threshold: 0.18
+        });
+        observer.observe(checkout);
+    }
+}
 
 document.addEventListener('change', function (event) {
     var select = event.target;

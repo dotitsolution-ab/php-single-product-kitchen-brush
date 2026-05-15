@@ -144,41 +144,45 @@ require BASE_PATH . '/includes/header.php';
                 <?php endif; ?>
                 <?= csrf_field() ?>
 
-                <p class="form-label">কয় পিস অর্ডার করবেন?</p>
-                <div class="pill-options" role="group" aria-label="Quantity">
-                    <?php foreach ([1, 2, 3, 4] as $option): ?>
-                        <label>
-                            <input type="radio" name="quantity" value="<?= e($option) ?>" <?= $quantity === $option ? 'checked' : '' ?>>
-                            <span><?= e($option) ?> পিস<?= $option === 4 ? '+' : '' ?></span>
-                        </label>
-                    <?php endforeach; ?>
+                <div class="order-form-section">
+                    <p class="form-label">কয় পিস অর্ডার করবেন?</p>
+                    <div class="quantity-stepper" data-quantity-stepper>
+                        <button type="button" data-qty-decrease aria-label="Decrease quantity">-</button>
+                        <input type="number" name="quantity" value="<?= e((string)$quantity) ?>" min="1" max="<?= e((string)max(1, (int)$product['stock'])) ?>" inputmode="numeric" data-qty-input aria-label="Quantity">
+                        <button type="button" data-qty-increase aria-label="Increase quantity">+</button>
+                    </div>
                 </div>
 
-                <p class="form-label">ডেলিভারি এরিয়া নির্বাচন করুন</p>
-                <div class="pill-options two">
-                    <?php foreach ($deliveryOptions as $key => $option): ?>
+                <div class="order-form-section">
+                    <p class="form-label">ডেলিভারি এরিয়া নির্বাচন করুন</p>
+                    <div class="pill-options delivery-options">
+                        <?php foreach ($deliveryOptions as $key => $option): ?>
                         <label>
                             <input type="radio" name="delivery_area" value="<?= e($key) ?>" <?= $selectedDelivery === $key ? 'checked' : '' ?>>
                             <span><?= e($option['label']) ?></span>
                         </label>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
 
-                <label>
-                    <input type="text" name="name" value="<?= e(old('name')) ?>" autocomplete="name" required maxlength="120" placeholder="আপনার নাম">
-                </label>
-                <label>
-                    <span class="phone-field">
-                        <span class="phone-prefix">+88</span>
-                        <input type="tel" name="phone" value="<?= e(normalize_phone(old('phone'))) ?>" autocomplete="tel" inputmode="numeric" pattern="01[3-9][0-9]{8}" maxlength="11" data-phone-input required placeholder="মোবাইল নম্বর">
-                    </span>
-                </label>
-                <label>
-                    <input type="email" name="email" value="<?= e(old('email')) ?>" autocomplete="email" maxlength="190" placeholder="ইমেইল (অপশনাল)">
-                </label>
-                <label>
-                    <textarea name="address" rows="3" required maxlength="500" placeholder="সম্পূর্ণ ঠিকানা"><?= e(old('address')) ?></textarea>
-                </label>
+                <div class="order-form-section customer-fields">
+                    <p class="form-label">আপনার তথ্য</p>
+                    <label>
+                        <input type="text" name="name" value="<?= e(old('name')) ?>" autocomplete="name" required maxlength="120" placeholder="আপনার নাম">
+                    </label>
+                    <label>
+                        <span class="phone-field">
+                            <span class="phone-prefix">+88</span>
+                            <input type="tel" name="phone" value="<?= e(normalize_phone(old('phone'))) ?>" autocomplete="tel" inputmode="numeric" pattern="01[3-9][0-9]{8}" maxlength="11" data-phone-input required placeholder="মোবাইল নম্বর">
+                        </span>
+                    </label>
+                    <label>
+                        <input type="email" name="email" value="<?= e(old('email')) ?>" autocomplete="email" maxlength="190" placeholder="ইমেইল (অপশনাল)">
+                    </label>
+                    <label>
+                        <textarea name="address" rows="3" required maxlength="500" placeholder="সম্পূর্ণ ঠিকানা"><?= e(old('address')) ?></textarea>
+                    </label>
+                </div>
                 <input type="hidden" name="delivery_note" value="">
                 <button class="funnel-submit" type="submit">অর্ডার কনফার্ম করুন</button>
                 <p class="secure-note">আপনার তথ্য ১০০% নিরাপদ এবং গোপন রাখা হবে</p>
