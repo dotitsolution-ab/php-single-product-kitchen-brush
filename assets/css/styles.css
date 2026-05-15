@@ -26,7 +26,7 @@ body {
     margin: 0;
     background: var(--bg);
     color: var(--ink);
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: "Noto Sans Bengali", "Hind Siliguri", "Nirmala UI", "SolaimanLipi", "Segoe UI", Arial, sans-serif;
     line-height: 1.5;
 }
 
@@ -822,50 +822,83 @@ select:focus {
     position: relative;
     width: min(420px, 100%);
     display: grid;
-    gap: 2px;
+    gap: 4px;
     border: 1px solid #fed7aa;
     border-radius: 14px;
-    padding: 12px 20px 14px;
+    padding: 14px 18px 16px;
     background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 14px 34px rgba(103, 69, 28, 0.1);
 }
 
+.offer-meta {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.offer-meta > div {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
 .offer-card del {
     color: #1f2937;
-    font-size: 21px;
+    font-size: 19px;
     font-weight: 900;
-    text-decoration-thickness: 4px;
+    text-decoration-thickness: 3px;
     text-decoration-color: #dc2626;
 }
 
-.offer-card span {
+.offer-note {
     color: #111827;
-    font-size: 19px;
+    font-size: 18px;
     font-weight: 900;
 }
 
-.offer-card strong {
+.offer-price {
     color: #fb7404;
-    font-size: clamp(58px, 7vw, 82px);
-    line-height: 0.96;
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    padding-right: 0;
+    line-height: 0.9;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.offer-price-number {
+    color: #fb7404;
+    font-size: clamp(62px, 7vw, 86px);
+    line-height: 0.9;
+    font-weight: 900;
+}
+
+.offer-price-currency {
+    color: #fb7404;
+    padding-bottom: 8px;
+    font-size: clamp(28px, 3vw, 38px);
+    line-height: 1;
     font-weight: 900;
 }
 
 .offer-card em {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    width: 76px;
-    height: 76px;
+    flex: 0 0 auto;
+    min-width: 68px;
+    min-height: 58px;
+    padding: 8px 10px;
     display: grid;
     place-items: center;
-    border-radius: 16px;
+    border-radius: 14px;
     color: #fff;
     background: #ef271c;
-    font-size: 20px;
+    font-size: 17px;
+    line-height: 1.12;
     font-style: normal;
     font-weight: 900;
-    transform: translateY(-50%) rotate(-8deg);
+    text-align: center;
+    transform: rotate(-6deg);
     box-shadow: 0 10px 22px rgba(239, 39, 28, 0.25);
 }
 
@@ -1307,12 +1340,27 @@ select:focus {
         font-size: 36px;
     }
 
+    .offer-meta {
+        gap: 10px;
+    }
+
+    .offer-price {
+        gap: 8px;
+    }
+
+    .offer-price-number {
+        font-size: 62px;
+    }
+
+    .offer-price-currency {
+        padding-bottom: 6px;
+        font-size: 28px;
+    }
+
     .offer-card em {
-        right: 12px;
-        top: 20px;
-        width: 72px;
-        height: 72px;
-        font-size: 18px;
+        min-width: 62px;
+        min-height: 52px;
+        font-size: 16px;
     }
 
     .delivery-strip,

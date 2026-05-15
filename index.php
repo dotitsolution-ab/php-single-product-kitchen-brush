@@ -54,12 +54,19 @@ require BASE_PATH . '/includes/header.php';
                 <p><?= e(landing_value('hero_subtitle')) ?></p>
 
                 <div class="offer-card">
-                    <?php if (!empty($product['compare_price'])): ?>
-                        <del><?= e(taka($product['compare_price'])) ?></del>
-                    <?php endif; ?>
-                    <span>এখন মাত্র</span>
-                    <strong><?= e(taka($product['price'])) ?></strong>
-                    <em><?= e(landing_value('discount_label')) ?></em>
+                    <div class="offer-meta">
+                        <div>
+                            <?php if (!empty($product['compare_price'])): ?>
+                                <del><?= e(taka($product['compare_price'])) ?></del>
+                            <?php endif; ?>
+                            <span class="offer-note">এখন মাত্র</span>
+                        </div>
+                        <em><?= e(landing_value('discount_label')) ?></em>
+                    </div>
+                    <strong class="offer-price">
+                        <span class="offer-price-number"><?= e(number_format((float)$product['price'], 0)) ?></span>
+                        <span class="offer-price-currency">টাকা</span>
+                    </strong>
                 </div>
 
                 <a class="funnel-cta" href="#checkout"><?= e(landing_value('cta_text')) ?></a>
