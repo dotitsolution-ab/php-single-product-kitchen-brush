@@ -24,8 +24,24 @@ if (is_post()) {
 }
 
 $product = active_product();
+$mediaItems = Media::items();
 $pageTitle = 'Product';
 require BASE_PATH . '/includes/admin_header.php';
+
+function render_media_picker(string $targetId, array $mediaItems): void
+{
+    ?>
+    <div class="media-picker">
+        <select data-media-select="<?= e($targetId) ?>">
+            <option value="">Choose from Media Library</option>
+            <?php foreach ($mediaItems as $item): ?>
+                <option value="<?= e($item['path']) ?>"><?= e($item['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <a class="button button-secondary" href="<?= e(base_url('admin/media.php')) ?>">Media</a>
+    </div>
+    <?php
+}
 ?>
 
 <section class="admin-section">
@@ -78,9 +94,10 @@ require BASE_PATH . '/includes/admin_header.php';
             </div>
             <label>
                 Main Product Image URL
-                <input type="text" name="image_url" value="<?= e($product['image_url']) ?>">
+                <input id="image_url" type="text" name="image_url" value="<?= e($product['image_url']) ?>" data-media-input>
                 <span class="field-help">Suggested: assets/images/kitchen-brush-pan-cleaning.jpg</span>
             </label>
+            <?php render_media_picker('image_url', $mediaItems); ?>
 
             <h2>Landing Page Content</h2>
             <label>
@@ -107,14 +124,16 @@ require BASE_PATH . '/includes/admin_header.php';
             </div>
             <label>
                 Hero Top Image URL
-                <input type="text" name="landing_hero_image_url" value="<?= e(landing_value('hero_image_url')) ?>">
+                <input id="landing_hero_image_url" type="text" name="landing_hero_image_url" value="<?= e(landing_value('hero_image_url')) ?>" data-media-input>
                 <span class="field-help">Use the last image at the top: assets/images/kitchen-brush-hero-drain.jpg</span>
             </label>
+            <?php render_media_picker('landing_hero_image_url', $mediaItems); ?>
             <label>
                 Demo / Circle Image URL
-                <input type="text" name="landing_demo_image_url" value="<?= e(landing_value('demo_image_url')) ?>">
+                <input id="landing_demo_image_url" type="text" name="landing_demo_image_url" value="<?= e(landing_value('demo_image_url')) ?>" data-media-input>
                 <span class="field-help">Suggested: assets/images/kitchen-brush-plate-demo.jpg</span>
             </label>
+            <?php render_media_picker('landing_demo_image_url', $mediaItems); ?>
             <div class="form-grid">
                 <label>
                     Dhaka Inside Delivery Charge
@@ -130,6 +149,7 @@ require BASE_PATH . '/includes/admin_header.php';
                 <textarea name="landing_feature_rows" rows="8"><?= e(landing_value('feature_rows')) ?></textarea>
                 <span class="field-help">One per line: Title|Small text|Image URL. You can use assets/images/ filenames or full URLs.</span>
             </label>
+            <a class="button button-secondary" href="<?= e(base_url('admin/media.php')) ?>">Open Media Library to copy image paths</a>
             <label>
                 Usage Images
                 <textarea name="landing_usage_rows" rows="6"><?= e(landing_value('usage_rows')) ?></textarea>

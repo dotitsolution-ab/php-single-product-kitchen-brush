@@ -269,6 +269,11 @@ select:focus {
     background: #eef0ed;
 }
 
+.button-danger {
+    color: #fff;
+    background: var(--rose);
+}
+
 .button-full {
     width: 100%;
 }
@@ -326,6 +331,43 @@ select:focus {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
+}
+
+.media-picker {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    margin-top: -6px;
+}
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 16px;
+}
+
+.media-card {
+    display: grid;
+    gap: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+    background: #fff;
+}
+
+.media-card img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #f3f4f6;
+}
+
+.media-card strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .check-list {

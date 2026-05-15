@@ -189,6 +189,14 @@ kitchen-brush-pan-close.jpg
 
 These image files are now committed with the project, so cPanel Git deploy will publish them with the rest of the site.
 
+Images uploaded from Admin -> Media Library are saved in:
+
+```text
+public_html/assets/images/uploads/
+```
+
+That upload folder is excluded from Git deploy deletion, so uploaded media will stay on the live server.
+
 ### Emergency Manual Update
 
 If Git is not available in cPanel, upload changed files with File Manager or FTP/SFTP.

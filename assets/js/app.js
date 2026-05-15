@@ -99,3 +99,41 @@ document.addEventListener('change', function (event) {
 document.querySelectorAll('[data-order-form]').forEach(function (form) {
     updateOrderSummary(form);
 });
+
+document.addEventListener('change', function (event) {
+    var select = event.target;
+    if (!select || !select.matches('[data-media-select]') || !select.value) {
+        return;
+    }
+
+    var target = document.getElementById(select.getAttribute('data-media-select'));
+    if (target) {
+        target.value = select.value;
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    select.value = '';
+});
+
+document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-copy-button]');
+    if (!button) {
+        return;
+    }
+
+    var card = button.closest('.media-card');
+    var input = card ? card.querySelector('[data-copy-value]') : null;
+    if (!input) {
+        return;
+    }
+
+    input.select();
+    input.setSelectionRange(0, input.value.length);
+    navigator.clipboard && navigator.clipboard.writeText
+        ? navigator.clipboard.writeText(input.value)
+        : document.execCommand('copy');
+
+    button.textContent = 'Copied';
+    window.setTimeout(function () {
+        button.textContent = 'Copy Path';
+    }, 1200);
+});
