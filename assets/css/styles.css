@@ -341,6 +341,66 @@ select:focus {
     margin-top: -6px;
 }
 
+.media-picker-inline {
+    margin-top: 0;
+}
+
+.landing-editor {
+    display: grid;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    background: #fbfcfb;
+}
+
+.landing-editor-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.landing-editor-head h3 {
+    margin: 0 0 4px;
+    font-size: 18px;
+}
+
+.landing-editor-head p {
+    margin: 0;
+}
+
+.landing-editor-rows {
+    display: grid;
+    gap: 12px;
+}
+
+.landing-editor-row {
+    display: grid;
+    gap: 10px;
+    align-items: end;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fff;
+}
+
+.feature-editor-row {
+    grid-template-columns: minmax(130px, 0.8fr) minmax(160px, 1fr) minmax(220px, 1.2fr) auto;
+}
+
+.usage-editor-row {
+    grid-template-columns: minmax(150px, 0.8fr) minmax(240px, 1.2fr) auto;
+}
+
+.reason-editor-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.media-field {
+    min-width: 0;
+}
+
 .media-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -698,7 +758,10 @@ select:focus {
     }
 
     .form-grid,
-    .stats-grid {
+    .stats-grid,
+    .feature-editor-row,
+    .usage-editor-row,
+    .reason-editor-row {
         grid-template-columns: 1fr;
     }
 
@@ -720,6 +783,7 @@ select:focus {
 
     .filter-bar,
     .panel-head,
+    .landing-editor-head,
     .invoice-head,
     .invoice-grid {
         align-items: stretch;

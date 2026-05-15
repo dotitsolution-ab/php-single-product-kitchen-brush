@@ -104,9 +104,66 @@ function delivery_options(array $product): array
 
 function save_landing_content(array $data): void
 {
+    $data = normalize_landing_editor_rows($data);
+
     foreach (array_keys(landing_defaults()) as $key) {
         save_setting('landing_' . $key, trim((string)($data['landing_' . $key] ?? '')));
     }
+}
+
+function normalize_landing_editor_rows(array $data): array
+{
+    if (isset($data['feature_title'], $data['feature_text'], $data['feature_image']) && is_array($data['feature_title'])) {
+        $data['landing_feature_rows'] = build_pipe_rows([
+            (array)$data['feature_title'],
+            (array)$data['feature_text'],
+            (array)$data['feature_image'],
+        ]);
+    }
+
+    if (isset($data['usage_title'], $data['usage_image']) && is_array($data['usage_title'])) {
+        $data['landing_usage_rows'] = build_pipe_rows([
+            (array)$data['usage_title'],
+            (array)$data['usage_image'],
+        ]);
+    }
+
+    if (isset($data['reason_title']) && is_array($data['reason_title'])) {
+        $data['landing_reason_rows'] = build_pipe_rows([
+            (array)$data['reason_title'],
+        ]);
+    }
+
+    return $data;
+}
+
+function build_pipe_rows(array $columns): string
+{
+    $rows = [];
+    $rowCount = 0;
+    foreach ($columns as $column) {
+        $rowCount = max($rowCount, count($column));
+    }
+
+    for ($index = 0; $index < $rowCount; $index++) {
+        $cells = [];
+        foreach ($columns as $column) {
+            $cells[] = clean_pipe_cell($column[$index] ?? '');
+        }
+
+        if (implode('', $cells) === '') {
+            continue;
+        }
+
+        $rows[] = implode('|', $cells);
+    }
+
+    return implode("\n", $rows);
+}
+
+function clean_pipe_cell(mixed $value): string
+{
+    return trim(str_replace(["\r", "\n", '|'], ' ', (string)$value));
 }
 
 function seed_kitchen_brush_content(): void

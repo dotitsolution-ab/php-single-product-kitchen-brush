@@ -102,16 +102,52 @@ document.querySelectorAll('[data-order-form]').forEach(function (form) {
 
 document.addEventListener('change', function (event) {
     var select = event.target;
-    if (!select || !select.matches('[data-media-select]') || !select.value) {
+    if (!select || !select.value) {
         return;
     }
 
-    var target = document.getElementById(select.getAttribute('data-media-select'));
+    var target = null;
+    if (select.matches('[data-media-select]')) {
+        target = document.getElementById(select.getAttribute('data-media-select'));
+    } else if (select.matches('[data-media-select-field]')) {
+        var field = select.closest('.media-field');
+        target = field ? field.querySelector('[data-media-input]') : null;
+    } else {
+        return;
+    }
+
     if (target) {
         target.value = select.value;
         target.dispatchEvent(new Event('input', { bubbles: true }));
     }
     select.value = '';
+});
+
+document.addEventListener('click', function (event) {
+    var addButton = event.target.closest('[data-add-row]');
+    if (!addButton) {
+        return;
+    }
+
+    var template = document.getElementById(addButton.getAttribute('data-add-row'));
+    var target = document.querySelector(addButton.getAttribute('data-row-target'));
+    if (!template || !target) {
+        return;
+    }
+
+    target.insertAdjacentHTML('beforeend', template.innerHTML.trim());
+});
+
+document.addEventListener('click', function (event) {
+    var removeButton = event.target.closest('[data-remove-row]');
+    if (!removeButton) {
+        return;
+    }
+
+    var row = removeButton.closest('[data-repeatable-row]');
+    if (row) {
+        row.remove();
+    }
 });
 
 document.addEventListener('click', function (event) {

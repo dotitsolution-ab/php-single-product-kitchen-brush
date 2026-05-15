@@ -34,11 +34,96 @@ function render_media_picker(string $targetId, array $mediaItems): void
     <div class="media-picker">
         <select data-media-select="<?= e($targetId) ?>">
             <option value="">Choose from Media Library</option>
-            <?php foreach ($mediaItems as $item): ?>
-                <option value="<?= e($item['path']) ?>"><?= e($item['name']) ?></option>
-            <?php endforeach; ?>
+            <?php render_media_options($mediaItems); ?>
         </select>
         <a class="button button-secondary" href="<?= e(base_url('admin/media.php')) ?>">Media</a>
+    </div>
+    <?php
+}
+
+function render_inline_media_picker(array $mediaItems): void
+{
+    ?>
+    <div class="media-picker media-picker-inline" data-media-field>
+        <select data-media-select-field>
+            <option value="">Choose from Media Library</option>
+            <?php render_media_options($mediaItems); ?>
+        </select>
+        <a class="button button-secondary" href="<?= e(base_url('admin/media.php')) ?>">Media</a>
+    </div>
+    <?php
+}
+
+function render_media_options(array $mediaItems): void
+{
+    foreach ($mediaItems as $item): ?>
+        <option value="<?= e($item['path']) ?>"><?= e($item['name']) ?></option>
+    <?php endforeach;
+}
+
+function landing_admin_rows(string $key, array $columns, int $minimumRows): array
+{
+    $rows = landing_rows($key, $columns);
+    while (count($rows) < $minimumRows) {
+        $row = [];
+        foreach ($columns as $column) {
+            $row[$column] = '';
+        }
+        $rows[] = $row;
+    }
+
+    return $rows;
+}
+
+function render_feature_editor_row(array $row, array $mediaItems): void
+{
+    ?>
+    <div class="landing-editor-row feature-editor-row" data-repeatable-row>
+        <label>
+            Title
+            <input type="text" name="feature_title[]" value="<?= e($row['title'] ?? '') ?>" maxlength="120">
+        </label>
+        <label>
+            Small Text
+            <input type="text" name="feature_text[]" value="<?= e($row['text'] ?? '') ?>" maxlength="160">
+        </label>
+        <label class="media-field">
+            Image
+            <input type="text" name="feature_image[]" value="<?= e($row['image'] ?? '') ?>" data-media-input placeholder="Select image from Media Library">
+            <?php render_inline_media_picker($mediaItems); ?>
+        </label>
+        <button class="button button-secondary" type="button" data-remove-row>Remove</button>
+    </div>
+    <?php
+}
+
+function render_usage_editor_row(array $row, array $mediaItems): void
+{
+    ?>
+    <div class="landing-editor-row usage-editor-row" data-repeatable-row>
+        <label>
+            Title
+            <input type="text" name="usage_title[]" value="<?= e($row['title'] ?? '') ?>" maxlength="120">
+        </label>
+        <label class="media-field">
+            Image
+            <input type="text" name="usage_image[]" value="<?= e($row['image'] ?? '') ?>" data-media-input placeholder="Select image from Media Library">
+            <?php render_inline_media_picker($mediaItems); ?>
+        </label>
+        <button class="button button-secondary" type="button" data-remove-row>Remove</button>
+    </div>
+    <?php
+}
+
+function render_reason_editor_row(array $row): void
+{
+    ?>
+    <div class="landing-editor-row reason-editor-row" data-repeatable-row>
+        <label>
+            Reason
+            <input type="text" name="reason_title[]" value="<?= e($row['title'] ?? '') ?>" maxlength="160">
+        </label>
+        <button class="button button-secondary" type="button" data-remove-row>Remove</button>
     </div>
     <?php
 }
@@ -144,22 +229,60 @@ function render_media_picker(string $targetId, array $mediaItems): void
                     <input type="number" name="landing_delivery_outside_charge" value="<?= e(landing_value('delivery_outside_charge')) ?>" min="0" step="1">
                 </label>
             </div>
-            <label>
-                Feature Cards
-                <textarea name="landing_feature_rows" rows="8"><?= e(landing_value('feature_rows')) ?></textarea>
-                <span class="field-help">One per line: Title|Small text|Image URL. You can use assets/images/ filenames or full URLs.</span>
-            </label>
-            <a class="button button-secondary" href="<?= e(base_url('admin/media.php')) ?>">Open Media Library to copy image paths</a>
-            <label>
-                Usage Images
-                <textarea name="landing_usage_rows" rows="6"><?= e(landing_value('usage_rows')) ?></textarea>
-                <span class="field-help">One per line: Title|Image URL</span>
-            </label>
-            <label>
-                Why People Like It
-                <textarea name="landing_reason_rows" rows="5"><?= e(landing_value('reason_rows')) ?></textarea>
-                <span class="field-help">One reason per line.</span>
-            </label>
+            <div class="landing-editor">
+                <div class="landing-editor-head">
+                    <div>
+                        <h3>Feature Cards</h3>
+                        <p class="field-help">Title/text লিখুন, তারপর image dropdown থেকে select করুন.</p>
+                    </div>
+                    <button class="button button-secondary" type="button" data-add-row="feature-row-template" data-row-target="#feature-rows">Add Feature</button>
+                </div>
+                <div id="feature-rows" class="landing-editor-rows">
+                    <?php foreach (landing_admin_rows('feature_rows', ['title', 'text', 'image'], 4) as $row): ?>
+                        <?php render_feature_editor_row($row, $mediaItems); ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="landing-editor">
+                <div class="landing-editor-head">
+                    <div>
+                        <h3>Usage Images</h3>
+                        <p class="field-help">Usage card image-ও Media Library থেকে select করা যাবে.</p>
+                    </div>
+                    <button class="button button-secondary" type="button" data-add-row="usage-row-template" data-row-target="#usage-rows">Add Usage</button>
+                </div>
+                <div id="usage-rows" class="landing-editor-rows">
+                    <?php foreach (landing_admin_rows('usage_rows', ['title', 'image'], 4) as $row): ?>
+                        <?php render_usage_editor_row($row, $mediaItems); ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="landing-editor">
+                <div class="landing-editor-head">
+                    <div>
+                        <h3>Why People Like It</h3>
+                        <p class="field-help">One reason per row.</p>
+                    </div>
+                    <button class="button button-secondary" type="button" data-add-row="reason-row-template" data-row-target="#reason-rows">Add Reason</button>
+                </div>
+                <div id="reason-rows" class="landing-editor-rows">
+                    <?php foreach (landing_admin_rows('reason_rows', ['title'], 4) as $row): ?>
+                        <?php render_reason_editor_row($row); ?>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <template id="feature-row-template">
+                <?php render_feature_editor_row(['title' => '', 'text' => '', 'image' => ''], $mediaItems); ?>
+            </template>
+            <template id="usage-row-template">
+                <?php render_usage_editor_row(['title' => '', 'image' => ''], $mediaItems); ?>
+            </template>
+            <template id="reason-row-template">
+                <?php render_reason_editor_row(['title' => '']); ?>
+            </template>
             <button class="button button-primary" type="submit">Save Product</button>
         </form>
     <?php endif; ?>

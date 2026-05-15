@@ -45,7 +45,7 @@ final class Media
                 'url' => image_src($relative),
                 'size' => $file->getSize(),
                 'modified' => $file->getMTime(),
-                'deletable' => str_starts_with($relative, self::UPLOAD_DIR . '/'),
+                'deletable' => true,
             ];
         }
 
@@ -95,15 +95,16 @@ final class Media
     public static function delete(string $relativePath): void
     {
         $relativePath = str_replace('\\', '/', trim($relativePath));
-        if (!str_starts_with($relativePath, self::UPLOAD_DIR . '/')) {
-            throw new RuntimeException('Only uploaded media files can be deleted from admin.');
+        $extension = strtolower(pathinfo($relativePath, PATHINFO_EXTENSION));
+        if (!str_starts_with($relativePath, self::IMAGE_ROOT . '/') || !array_key_exists($extension, self::ALLOWED)) {
+            throw new RuntimeException('Only media library image files can be deleted from admin.');
         }
 
-        $uploadRoot = realpath(BASE_PATH . '/' . self::UPLOAD_DIR);
+        $imageRoot = realpath(BASE_PATH . '/' . self::IMAGE_ROOT);
         $target = realpath(BASE_PATH . '/' . $relativePath);
 
-        $uploadRootWithSeparator = $uploadRoot === false ? '' : rtrim($uploadRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-        if ($uploadRoot === false || $target === false || !str_starts_with($target, $uploadRootWithSeparator)) {
+        $imageRootWithSeparator = $imageRoot === false ? '' : rtrim($imageRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if ($imageRoot === false || $target === false || !str_starts_with($target, $imageRootWithSeparator)) {
             throw new RuntimeException('Media file was not found.');
         }
 

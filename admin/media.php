@@ -57,7 +57,7 @@ require BASE_PATH . '/includes/admin_header.php';
                     <input type="text" value="<?= e($item['path']) ?>" readonly data-copy-value>
                     <button class="button button-secondary button-full" type="button" data-copy-button>Copy Path</button>
                     <?php if ($item['deletable']): ?>
-                        <form method="post" data-confirm="Delete this uploaded image?">
+                        <form method="post" data-confirm="Delete this image from the server? Make sure it is not selected in the product content.">
                             <?= csrf_field() ?>
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="path" value="<?= e($item['path']) ?>">
@@ -74,4 +74,3 @@ require BASE_PATH . '/includes/admin_header.php';
 </section>
 
 <?php require BASE_PATH . '/includes/admin_footer.php'; ?>
-
