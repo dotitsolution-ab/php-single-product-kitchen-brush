@@ -187,7 +187,7 @@ kitchen-brush-plate-demo.jpg
 kitchen-brush-pan-close.jpg
 ```
 
-The cPanel deploy config excludes `assets/images/*`, so future Git deploys will not delete images uploaded on the server.
+These image files are now committed with the project, so cPanel Git deploy will publish them with the rest of the site.
 
 ### Emergency Manual Update
 
