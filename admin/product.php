@@ -9,8 +9,14 @@ Auth::requireAdmin();
 if (is_post()) {
     verify_csrf();
     try {
-        save_product($_POST);
-        flash('success', 'Product updated.');
+        $action = (string)($_POST['action'] ?? 'save');
+        if ($action === 'seed_kitchen_brush') {
+            seed_kitchen_brush_content();
+            flash('success', 'Kitchen brush demo content applied. Upload the image files in assets/images or replace the URLs below.');
+        } else {
+            save_product($_POST);
+            flash('success', 'Product updated.');
+        }
     } catch (Throwable $exception) {
         flash('error', $exception->getMessage());
     }
@@ -27,8 +33,18 @@ require BASE_PATH . '/includes/admin_header.php';
     <?php if (!$product): ?>
         <div class="alert alert-error">No active product found. Run installer or import database/schema.sql.</div>
     <?php else: ?>
+        <form class="content-panel compact-admin-form" method="post" data-confirm="Apply kitchen brush demo content? This will replace current product text and landing content.">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="seed_kitchen_brush">
+            <div>
+                <h2>Quick Setup</h2>
+                <p class="muted">Use this once if the live page still shows old demo content like Premium Single Product.</p>
+            </div>
+            <button class="button button-secondary" type="submit">Apply Kitchen Brush Content</button>
+        </form>
         <form class="content-panel admin-form" method="post">
             <?= csrf_field() ?>
+            <input type="hidden" name="action" value="save">
             <h2>Core Product</h2>
             <label>
                 Product Name
@@ -62,7 +78,8 @@ require BASE_PATH . '/includes/admin_header.php';
             </div>
             <label>
                 Main Product Image URL
-                <input type="url" name="image_url" value="<?= e($product['image_url']) ?>">
+                <input type="text" name="image_url" value="<?= e($product['image_url']) ?>">
+                <span class="field-help">Suggested: assets/images/kitchen-brush-pan-cleaning.jpg</span>
             </label>
 
             <h2>Landing Page Content</h2>
@@ -85,8 +102,14 @@ require BASE_PATH . '/includes/admin_header.php';
                 </label>
             </div>
             <label>
+                Hero Top Image URL
+                <input type="text" name="landing_hero_image_url" value="<?= e(landing_value('hero_image_url')) ?>">
+                <span class="field-help">Use the last image at the top: assets/images/kitchen-brush-hero-drain.jpg</span>
+            </label>
+            <label>
                 Demo / Circle Image URL
-                <input type="url" name="landing_demo_image_url" value="<?= e(landing_value('demo_image_url')) ?>">
+                <input type="text" name="landing_demo_image_url" value="<?= e(landing_value('demo_image_url')) ?>">
+                <span class="field-help">Suggested: assets/images/kitchen-brush-plate-demo.jpg</span>
             </label>
             <div class="form-grid">
                 <label>
@@ -101,7 +124,7 @@ require BASE_PATH . '/includes/admin_header.php';
             <label>
                 Feature Cards
                 <textarea name="landing_feature_rows" rows="8"><?= e(landing_value('feature_rows')) ?></textarea>
-                <span class="field-help">One per line: Title|Small text|Image URL</span>
+                <span class="field-help">One per line: Title|Small text|Image URL. You can use assets/images/ filenames or full URLs.</span>
             </label>
             <label>
                 Usage Images

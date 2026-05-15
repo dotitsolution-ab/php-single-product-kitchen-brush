@@ -129,7 +129,7 @@ VALUES
         399,
         60,
         100,
-        'https://placehold.co/760x760/fff7ed/f97316?text=Kitchen+Cleaning+Brush',
+        'assets/images/kitchen-brush-pan-cleaning.jpg',
         1
     )
 ON DUPLICATE KEY UPDATE name = VALUES(name);

@@ -22,11 +22,12 @@ function landing_defaults(): array
         'hero_subtitle' => 'দাগ দূর হবে সহজে, ক্লিনিং হবে আরামে ও নিরাপদে',
         'discount_label' => '২৫% ছাড়',
         'cta_text' => 'এখনই অর্ডার করুন',
-        'demo_image_url' => 'https://placehold.co/420x420/f8fafc/f97316?text=Cleaning+Demo',
+        'hero_image_url' => 'assets/images/kitchen-brush-hero-drain.jpg',
+        'demo_image_url' => 'assets/images/kitchen-brush-plate-demo.jpg',
         'delivery_inside_charge' => '60',
         'delivery_outside_charge' => '120',
-        'feature_rows' => "৩৬০° রোটেটিং ব্রাশ হেড|সব কোণায় পরিষ্কার|https://placehold.co/240x180/fff7ed/f97316?text=360\nশক্ত ব্রাশ|দাগ তুলতে সাহায্য করে|https://placehold.co/240x180/fff7ed/f97316?text=Strong\nলম্বা হ্যান্ডেল|ব্যবহারে সহজ|https://placehold.co/240x180/fff7ed/f97316?text=Handle\nহাঁড়ি-পাতিলের দাগ|সহজে ওঠাতে সহায়ক|https://placehold.co/240x180/fff7ed/f97316?text=Pot\nওয়াল হ্যাঙ্গিং|স্টোরেজ সহজ|https://placehold.co/240x180/fff7ed/f97316?text=Hang\nদ্রুত শুকায়|পানি ঝরে যায় সহজে|https://placehold.co/240x180/fff7ed/f97316?text=Dry",
-        'usage_rows' => "প্লেট|https://placehold.co/360x260/f8fafc/f97316?text=Plate\nফ্রাইপ্যান|https://placehold.co/360x260/f8fafc/f97316?text=Frypan\nহাঁড়ি|https://placehold.co/360x260/f8fafc/f97316?text=Pot\nসিঙ্ক|https://placehold.co/360x260/f8fafc/f97316?text=Sink",
+        'feature_rows' => "৩৬০° রোটেটিং ব্রাশ হেড|সব কোণায় পরিষ্কার|assets/images/kitchen-brush-pan-close.jpg\nশক্ত ব্রাশ|দাগ তুলতে সাহায্য করে|assets/images/kitchen-brush-frypan-foam.jpg\nলম্বা হ্যান্ডেল|ব্যবহারে সহজ|assets/images/kitchen-brush-pan-cleaning.jpg\nওয়াল হ্যাঙ্গিং|স্টোরেজ সহজ|assets/images/kitchen-brush-hanging-storage.jpg",
+        'usage_rows' => "প্লেট|assets/images/kitchen-brush-plate-demo.jpg\nফ্রাইপ্যান|assets/images/kitchen-brush-frypan-foam.jpg\nহাঁড়ি|assets/images/kitchen-brush-pan-cleaning.jpg\nস্টোরেজ|assets/images/kitchen-brush-hanging-storage.jpg",
         'reason_rows' => "শ্রম ও সময় বাঁচায়\nদাগ দূর করে সহজে, স্ক্র্যাচ হয় না\nটেকসই রোটেশন, ঝামেলামুক্ত প্রয়োগ\nপচা গন্ধ কমায়, দাগ থাকে না",
     ];
 }
@@ -35,6 +36,22 @@ function landing_value(string $key): string
 {
     $defaults = landing_defaults();
     return setting('landing_' . $key, (string)($defaults[$key] ?? ''));
+}
+
+function image_src(string $value, string $fallback = ''): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        $value = $fallback;
+    }
+    if ($value === '') {
+        return '';
+    }
+    if (preg_match('/^(https?:)?\/\//', $value) === 1 || str_starts_with($value, '/')) {
+        return $value;
+    }
+
+    return base_url($value);
 }
 
 function landing_rows(string $key, array $columns): array
@@ -77,6 +94,31 @@ function save_landing_content(array $data): void
     foreach (array_keys(landing_defaults()) as $key) {
         save_setting('landing_' . $key, trim((string)($data['landing_' . $key] ?? '')));
     }
+}
+
+function seed_kitchen_brush_content(): void
+{
+    $product = active_product();
+    if (!$product) {
+        throw new RuntimeException('No active product found.');
+    }
+
+    $data = landing_defaults();
+    $data['name'] = '৩৬০° রোটেটিং কিচেন ক্লিনিং ব্রাশ';
+    $data['tagline'] = 'স্মার্ট ক্লিনিং, সহজ জীবন';
+    $data['description'] = 'দাগ দূর হবে সহজে, ক্লিনিং হবে আরামে ও নিরাপদে।';
+    $data['highlights'] = "৩৬০° রোটেটিং ব্রাশ হেড\nশক্ত ব্রাশ দাগ তুলতে সহায়ক\nলম্বা হ্যান্ডেল ব্যবহারে সহজ\nওয়াল হ্যাঙ্গিং স্টোরেজ";
+    $data['price'] = '299';
+    $data['compare_price'] = '399';
+    $data['stock'] = (string)max(100, (int)$product['stock']);
+    $data['image_url'] = 'assets/images/kitchen-brush-pan-cleaning.jpg';
+    foreach ($data as $key => $value) {
+        if (array_key_exists($key, landing_defaults())) {
+            $data['landing_' . $key] = $value;
+        }
+    }
+
+    save_product($data);
 }
 
 function create_cod_order(array $data): array

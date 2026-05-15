@@ -43,6 +43,8 @@ require BASE_PATH . '/includes/header.php';
     $features = landing_rows('feature_rows', ['title', 'text', 'image']);
     $usages = landing_rows('usage_rows', ['title', 'image']);
     $reasons = landing_rows('reason_rows', ['title']);
+    $heroImage = image_src(landing_value('hero_image_url'), (string)$product['image_url']);
+    $demoImage = image_src(landing_value('demo_image_url'), (string)$product['image_url']);
     ?>
     <section class="funnel">
         <div class="funnel-hero">
@@ -75,8 +77,10 @@ require BASE_PATH . '/includes/header.php';
             </div>
 
             <div class="hero-product">
-                <img class="hero-main-img" src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="eager" width="760" height="760">
-                <img class="hero-demo-img" src="<?= e(landing_value('demo_image_url')) ?>" alt="Product demo" loading="lazy" width="260" height="260">
+                <img class="hero-main-img" src="<?= e($heroImage) ?>" alt="<?= e($product['name']) ?>" loading="eager" width="760" height="760">
+                <?php if ($demoImage !== ''): ?>
+                    <img class="hero-demo-img" src="<?= e($demoImage) ?>" alt="Product demo" loading="lazy" width="260" height="260">
+                <?php endif; ?>
             </div>
         </div>
 
@@ -86,8 +90,9 @@ require BASE_PATH . '/includes/header.php';
                 <div class="feature-grid">
                     <?php foreach ($features as $feature): ?>
                         <article class="feature-tile">
-                            <?php if ($feature['image'] !== ''): ?>
-                                <img src="<?= e($feature['image']) ?>" alt="<?= e($feature['title']) ?>" loading="lazy">
+                            <?php $featureImage = image_src($feature['image']); ?>
+                            <?php if ($featureImage !== ''): ?>
+                                <img src="<?= e($featureImage) ?>" alt="<?= e($feature['title']) ?>" loading="lazy">
                             <?php endif; ?>
                             <strong><?= e($feature['title']) ?></strong>
                             <?php if ($feature['text'] !== ''): ?>
@@ -105,8 +110,9 @@ require BASE_PATH . '/includes/header.php';
                 <div class="usage-grid">
                     <?php foreach ($usages as $usage): ?>
                         <article class="usage-card">
-                            <?php if ($usage['image'] !== ''): ?>
-                                <img src="<?= e($usage['image']) ?>" alt="<?= e($usage['title']) ?>" loading="lazy">
+                            <?php $usageImage = image_src($usage['image']); ?>
+                            <?php if ($usageImage !== ''): ?>
+                                <img src="<?= e($usageImage) ?>" alt="<?= e($usage['title']) ?>" loading="lazy">
                             <?php endif; ?>
                             <strong><?= e($usage['title']) ?></strong>
                         </article>

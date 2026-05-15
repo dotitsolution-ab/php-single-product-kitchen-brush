@@ -321,6 +321,13 @@ select:focus {
     gap: 16px;
 }
 
+.compact-admin-form {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
 .check-list {
     display: grid;
     gap: 10px;
@@ -714,10 +721,10 @@ select:focus {
 }
 
 .funnel-hero {
-    min-height: 760px;
+    min-height: 700px;
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
-    gap: 22px;
+    grid-template-columns: minmax(0, 0.92fr) minmax(420px, 1.08fr);
+    gap: 28px;
     align-items: center;
     padding: 38px 42px 30px;
     background:
@@ -746,8 +753,8 @@ select:focus {
 .funnel-copy h1 {
     margin: 28px 0 12px;
     color: #151515;
-    font-size: clamp(42px, 6.6vw, 92px);
-    line-height: 0.96;
+    font-size: clamp(40px, 5.2vw, 72px);
+    line-height: 1.02;
     letter-spacing: 0;
 }
 
@@ -762,7 +769,7 @@ select:focus {
 
 .offer-card {
     position: relative;
-    width: min(490px, 100%);
+    width: min(520px, 100%);
     display: grid;
     gap: 4px;
     border: 2px solid #ffad32;
@@ -787,8 +794,8 @@ select:focus {
 
 .offer-card strong {
     color: #fb7404;
-    font-size: clamp(68px, 12vw, 132px);
-    line-height: 0.9;
+    font-size: clamp(64px, 10vw, 112px);
+    line-height: 0.92;
     font-weight: 900;
 }
 
@@ -861,23 +868,25 @@ select:focus {
 
 .hero-product {
     position: relative;
-    min-height: 540px;
-    display: grid;
-    place-items: center;
+    min-height: 600px;
+    display: block;
 }
 
 .hero-main-img {
-    width: min(560px, 100%);
-    aspect-ratio: 1 / 1;
-    object-fit: contain;
-    filter: drop-shadow(0 30px 34px rgba(54, 44, 34, 0.18));
+    width: 100%;
+    height: 600px;
+    border: 12px solid #fff;
+    border-radius: 28px;
+    object-fit: cover;
+    object-position: center;
+    box-shadow: 0 30px 60px rgba(54, 44, 34, 0.18);
 }
 
 .hero-demo-img {
     position: absolute;
-    right: 0;
-    bottom: 42px;
-    width: min(260px, 42%);
+    right: -18px;
+    bottom: 30px;
+    width: min(250px, 40%);
     aspect-ratio: 1 / 1;
     border: 12px solid #fff;
     border-radius: 50%;
@@ -1144,7 +1153,11 @@ select:focus {
     }
 
     .hero-product {
-        min-height: 430px;
+        min-height: auto;
+    }
+
+    .hero-main-img {
+        height: min(560px, 72vw);
     }
 
     .feature-grid {
@@ -1182,7 +1195,7 @@ select:focus {
     }
 
     .funnel-copy h1 {
-        font-size: 42px;
+        font-size: 38px;
     }
 
     .offer-card em {

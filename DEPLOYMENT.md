@@ -168,6 +168,27 @@ After pulling the security hardening update:
 - Confirm `config.php` exists only on the server and is not committed to Git.
 - In cPanel, keep PHP `display_errors` off for production.
 
+### Product Images
+
+Upload product images to:
+
+```text
+public_html/assets/images/
+```
+
+Suggested filenames:
+
+```text
+kitchen-brush-hero-drain.jpg
+kitchen-brush-frypan-foam.jpg
+kitchen-brush-pan-cleaning.jpg
+kitchen-brush-hanging-storage.jpg
+kitchen-brush-plate-demo.jpg
+kitchen-brush-pan-close.jpg
+```
+
+The cPanel deploy config excludes `assets/images/*`, so future Git deploys will not delete images uploaded on the server.
+
 ### Emergency Manual Update
 
 If Git is not available in cPanel, upload changed files with File Manager or FTP/SFTP.
