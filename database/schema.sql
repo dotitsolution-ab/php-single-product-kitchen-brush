@@ -133,6 +133,21 @@ CREATE TABLE IF NOT EXISTS email_logs (
     CONSTRAINT fk_email_logs_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS sms_logs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id INT UNSIGNED NULL,
+    sms_type VARCHAR(60) NOT NULL,
+    recipient_phone VARCHAR(20) NOT NULL,
+    message_text TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'sent',
+    provider_response TEXT NULL,
+    error_message TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_sms_logs_order_type (order_id, sms_type),
+    INDEX idx_sms_logs_status (status),
+    CONSTRAINT fk_sms_logs_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO products
     (name, slug, tagline, description, highlights, price, compare_price, delivery_charge, stock, image_url, is_active)
 VALUES
@@ -176,5 +191,15 @@ INSERT INTO settings (key_name, value_text) VALUES
     ('admin_order_email_text', ''),
     ('customer_order_email_subject', 'আপনার অর্ডারটি গ্রহণ করা হয়েছে - {{order_number}}'),
     ('customer_order_email_html', ''),
-    ('customer_order_email_text', '')
+    ('customer_order_email_text', ''),
+    ('sms_enabled', '0'),
+    ('customer_order_sms_enabled', '0'),
+    ('sms_provider_name', ''),
+    ('sms_api_url', ''),
+    ('sms_api_method', 'POST'),
+    ('sms_api_key', ''),
+    ('sms_sender_id', ''),
+    ('sms_request_body', 'api_key={{sms_api_key}}&senderid={{sms_sender_id}}&number={{phone_880}}&message={{message_url}}'),
+    ('sms_success_keyword', ''),
+    ('customer_order_sms_message', 'প্রিয় {{customer_name}}, আপনার অর্ডার {{order_number}} গ্রহণ করা হয়েছে। মোট {{total}}। {{site_name}}')
 ON DUPLICATE KEY UPDATE value_text = VALUES(value_text);

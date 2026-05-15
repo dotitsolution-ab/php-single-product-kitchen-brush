@@ -22,14 +22,24 @@ $templateSettings = [
     'customer_order_email_html' => 'Customer HTML Template',
     'customer_order_email_text' => 'Customer Text Template',
 ];
+$smsSettings = [
+    'sms_provider_name' => 'SMS Provider Name',
+    'sms_api_url' => 'SMS API URL',
+    'sms_api_key' => 'SMS API Key',
+    'sms_sender_id' => 'SMS Sender ID',
+    'sms_success_keyword' => 'Success Keyword (Optional)',
+];
 $emailLogs = list_email_logs(20);
+$smsLogs = list_sms_logs(20);
 
 if (is_post()) {
     verify_csrf();
     try {
         save_setting('email_enabled', isset($_POST['email_enabled']) ? '1' : '0');
+        save_setting('sms_enabled', isset($_POST['sms_enabled']) ? '1' : '0');
         save_setting('admin_order_email_enabled', isset($_POST['admin_order_email_enabled']) ? '1' : '0');
         save_setting('customer_order_email_enabled', isset($_POST['customer_order_email_enabled']) ? '1' : '0');
+        save_setting('customer_order_sms_enabled', isset($_POST['customer_order_sms_enabled']) ? '1' : '0');
 
         foreach ($plainSettings as $key => $label) {
             save_setting($key, trim((string)($_POST[$key] ?? '')));
@@ -37,13 +47,19 @@ if (is_post()) {
         foreach ($templateSettings as $key => $label) {
             save_setting($key, trim((string)($_POST[$key] ?? '')));
         }
+        foreach ($smsSettings as $key => $label) {
+            save_setting($key, trim((string)($_POST[$key] ?? '')));
+        }
+        save_setting('sms_api_method', in_array(($_POST['sms_api_method'] ?? 'POST'), ['GET', 'POST'], true) ? (string)$_POST['sms_api_method'] : 'POST');
+        save_setting('sms_request_body', trim((string)($_POST['sms_request_body'] ?? '')));
+        save_setting('customer_order_sms_message', trim((string)($_POST['customer_order_sms_message'] ?? '')));
 
         $secret = trim((string)($_POST['mailjet_secret_key'] ?? ''));
         if ($secret !== '') {
             save_setting('mailjet_secret_key', $secret);
         }
 
-        flash('success', 'Email settings updated.');
+        flash('success', 'Notification settings updated.');
     } catch (Throwable $exception) {
         flash('error', $exception->getMessage());
     }
@@ -51,15 +67,15 @@ if (is_post()) {
     redirect('admin/email.php');
 }
 
-$pageTitle = 'Email';
+$pageTitle = 'Notifications';
 require BASE_PATH . '/includes/admin_header.php';
 ?>
 
 <section class="admin-section">
     <div class="panel-head">
         <div>
-            <h1>Email</h1>
-            <p class="muted">Mailjet API settings and editable order email templates.</p>
+            <h1>Notifications</h1>
+            <p class="muted">Mailjet email, SMS API, and editable order notification templates.</p>
         </div>
     </div>
 
@@ -94,7 +110,36 @@ require BASE_PATH . '/includes/admin_header.php';
         </div>
 
         <div class="settings-card">
-            <h2>Email Rules</h2>
+            <h2>SMS API</h2>
+            <label class="toggle-line">
+                <input type="checkbox" name="sms_enabled" value="1" <?= setting('sms_enabled', '0') === '1' ? 'checked' : '' ?>>
+                Enable SMS sending
+            </label>
+            <div class="form-grid">
+                <?php foreach ($smsSettings as $key => $label): ?>
+                    <label>
+                        <?= e($label) ?>
+                        <input type="text" name="<?= e($key) ?>" value="<?= e(setting($key)) ?>">
+                    </label>
+                <?php endforeach; ?>
+                <label>
+                    SMS Method
+                    <select name="sms_api_method">
+                        <?php foreach (['POST', 'GET'] as $method): ?>
+                            <option value="<?= e($method) ?>" <?= setting('sms_api_method', 'POST') === $method ? 'selected' : '' ?>><?= e($method) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+            </div>
+            <label>
+                Request Body / Query Template
+                <textarea name="sms_request_body" rows="4"><?= e(sms_template_value('sms_request_body')) ?></textarea>
+                <span class="field-help">Use {{sms_api_key}}, {{sms_sender_id}}, {{phone}}, {{phone_880}}, {{message}}, {{message_url}}. For GET this is appended as query string.</span>
+            </label>
+        </div>
+
+        <div class="settings-card">
+            <h2>Notification Rules</h2>
             <label class="toggle-line">
                 <input type="checkbox" name="admin_order_email_enabled" value="1" <?= setting('admin_order_email_enabled', '1') === '1' ? 'checked' : '' ?>>
                 Send admin email when a new order arrives
@@ -102,6 +147,10 @@ require BASE_PATH . '/includes/admin_header.php';
             <label class="toggle-line">
                 <input type="checkbox" name="customer_order_email_enabled" value="1" <?= setting('customer_order_email_enabled', '1') === '1' ? 'checked' : '' ?>>
                 Send customer order email once after order placement
+            </label>
+            <label class="toggle-line">
+                <input type="checkbox" name="customer_order_sms_enabled" value="1" <?= setting('customer_order_sms_enabled', '0') === '1' ? 'checked' : '' ?>>
+                Send customer order SMS once after order placement
             </label>
         </div>
 
@@ -148,7 +197,16 @@ require BASE_PATH . '/includes/admin_header.php';
             </div>
         </div>
 
-        <button class="button button-primary" type="submit">Save Email Settings</button>
+        <div class="settings-card">
+            <h2>Customer SMS Template</h2>
+            <label>
+                SMS Message
+                <textarea name="customer_order_sms_message" rows="5" maxlength="480"><?= e(sms_template_value('customer_order_sms_message')) ?></textarea>
+                <span class="field-help">Keep it short. Unicode Bangla SMS may use more SMS parts.</span>
+            </label>
+        </div>
+
+        <button class="button button-primary" type="submit">Save Notification Settings</button>
     </form>
 
     <div class="content-panel">
@@ -173,6 +231,34 @@ require BASE_PATH . '/includes/admin_header.php';
                 <?php endforeach; ?>
                 <?php if (!$emailLogs): ?>
                     <tr><td colspan="6">No email logs yet.</td></tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="content-panel">
+        <div class="panel-head">
+            <h2>Recent SMS Logs</h2>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr><th>Time</th><th>Order</th><th>Type</th><th>Phone</th><th>Status</th><th>Message</th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ($smsLogs as $log): ?>
+                    <tr>
+                        <td><?= e(date('d M Y H:i', strtotime((string)$log['created_at']))) ?></td>
+                        <td><?= e((string)($log['order_number'] ?? '-')) ?></td>
+                        <td><?= e($log['sms_type']) ?></td>
+                        <td><?= e(display_phone((string)$log['recipient_phone'])) ?></td>
+                        <td><span class="<?= e($log['status'] === 'sent' ? 'badge badge-green' : 'badge badge-red') ?>"><?= e($log['status']) ?></span></td>
+                        <td><?= e((string)($log['provider_response'] ?: $log['error_message'] ?: $log['message_text'])) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (!$smsLogs): ?>
+                    <tr><td colspan="6">No SMS logs yet.</td></tr>
                 <?php endif; ?>
                 </tbody>
             </table>

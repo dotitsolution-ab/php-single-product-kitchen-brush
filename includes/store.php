@@ -45,6 +45,22 @@ function ensure_email_schema(): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS sms_logs (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            order_id INT UNSIGNED NULL,
+            sms_type VARCHAR(60) NOT NULL,
+            recipient_phone VARCHAR(20) NOT NULL,
+            message_text TEXT NOT NULL,
+            status VARCHAR(30) NOT NULL DEFAULT 'sent',
+            provider_response TEXT NULL,
+            error_message TEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_sms_logs_order_type (order_id, sms_type),
+            INDEX idx_sms_logs_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
     $checked = true;
 }
 
@@ -80,9 +96,25 @@ function email_defaults(): array
     ];
 }
 
+function sms_defaults(): array
+{
+    return [
+        'sms_api_method' => 'POST',
+        'sms_request_body' => 'api_key={{sms_api_key}}&senderid={{sms_sender_id}}&number={{phone_880}}&message={{message_url}}',
+        'customer_order_sms_message' => 'প্রিয় {{customer_name}}, আপনার অর্ডার {{order_number}} গ্রহণ করা হয়েছে। মোট {{total}}। {{site_name}}',
+    ];
+}
+
 function email_template_value(string $key): string
 {
     $defaults = email_defaults();
+    $value = setting($key, (string)($defaults[$key] ?? ''));
+    return $value !== '' ? $value : (string)($defaults[$key] ?? '');
+}
+
+function sms_template_value(string $key): string
+{
+    $defaults = sms_defaults();
     $value = setting($key, (string)($defaults[$key] ?? ''));
     return $value !== '' ? $value : (string)($defaults[$key] ?? '');
 }
@@ -481,11 +513,11 @@ function order_shipment(int $orderId): ?array
 
 function send_order_created_emails(array $order): void
 {
-    if (!$order || setting('email_enabled', '0') !== '1') {
+    if (!$order) {
         return;
     }
 
-    if (setting('admin_order_email_enabled', '1') === '1') {
+    if (setting('email_enabled', '0') === '1' && setting('admin_order_email_enabled', '1') === '1') {
         try {
             send_order_email(
                 $order,
@@ -501,11 +533,19 @@ function send_order_created_emails(array $order): void
         }
     }
 
-    if (setting('customer_order_email_enabled', '1') === '1') {
+    if (setting('email_enabled', '0') === '1' && setting('customer_order_email_enabled', '1') === '1') {
         try {
             send_customer_order_email($order);
         } catch (Throwable) {
             // Logged inside send_order_email.
+        }
+    }
+
+    if (setting('sms_enabled', '0') === '1' && setting('customer_order_sms_enabled', '0') === '1') {
+        try {
+            send_customer_order_sms($order);
+        } catch (Throwable) {
+            // Logged inside send_order_sms.
         }
     }
 }
@@ -549,6 +589,68 @@ function send_customer_order_email(array $order, bool $throwIfAlreadySent = fals
     );
 
     return true;
+}
+
+function send_order_customer_sms_once(int $orderId): void
+{
+    $order = order_with_items_by_id($orderId);
+    if (!$order) {
+        throw new InvalidArgumentException('Order not found.');
+    }
+
+    send_customer_order_sms($order, true);
+}
+
+function send_customer_order_sms(array $order, bool $throwIfAlreadySent = false): bool
+{
+    $orderId = (int)($order['id'] ?? 0);
+    $phone = normalize_phone((string)($order['customer_phone'] ?? ''));
+    if (!valid_bd_phone($phone)) {
+        if ($throwIfAlreadySent) {
+            throw new RuntimeException('This order does not have a valid customer phone number.');
+        }
+        return false;
+    }
+
+    if (sms_log_success_exists($orderId, 'customer_order_created')) {
+        if ($throwIfAlreadySent) {
+            throw new RuntimeException('Customer order SMS was already sent once.');
+        }
+        return false;
+    }
+
+    send_order_sms($order, 'customer_order_created', $phone, 'customer_order_sms_message');
+    return true;
+}
+
+function send_order_sms(array $order, string $type, string $phone, string $messageKey): void
+{
+    ensure_email_schema();
+
+    $phone = normalize_phone($phone);
+    $message = render_order_sms_template(sms_template_value($messageKey), $order);
+
+    try {
+        $response = (new SmsGateway())->send($phone, $message);
+        log_sms_event(
+            (int)($order['id'] ?? 0),
+            $type,
+            $phone,
+            $message,
+            'sent',
+            (string)($response['body'] ?? '')
+        );
+    } catch (Throwable $exception) {
+        log_sms_event(
+            (int)($order['id'] ?? 0),
+            $type,
+            $phone,
+            $message,
+            'failed',
+            $exception->getMessage()
+        );
+        throw $exception;
+    }
 }
 
 function send_order_email(
@@ -603,6 +705,14 @@ function render_order_email_template(string $template, array $order, bool $html)
 {
     $values = order_email_variables($order, $html);
     return strtr($template, $values);
+}
+
+function render_order_sms_template(string $template, array $order): string
+{
+    $values = order_email_variables($order, false);
+    $message = strtr($template, $values);
+    $message = preg_replace('/\s+/', ' ', $message) ?? $message;
+    return trim($message);
 }
 
 function order_email_variables(array $order, bool $html): array
@@ -676,6 +786,18 @@ function email_log_success_exists(int $orderId, string $type): bool
     return (bool)$stmt->fetchColumn();
 }
 
+function sms_log_success_exists(int $orderId, string $type): bool
+{
+    ensure_email_schema();
+    $stmt = db()->prepare('SELECT id FROM sms_logs WHERE order_id = :order_id AND sms_type = :sms_type AND status = :status LIMIT 1');
+    $stmt->execute([
+        'order_id' => $orderId,
+        'sms_type' => $type,
+        'status' => 'sent',
+    ]);
+    return (bool)$stmt->fetchColumn();
+}
+
 function log_email_event(int $orderId, string $type, string $recipient, string $subject, string $status, ?string $messageId, ?string $error): void
 {
     ensure_email_schema();
@@ -694,6 +816,24 @@ function log_email_event(int $orderId, string $type, string $recipient, string $
     ]);
 }
 
+function log_sms_event(int $orderId, string $type, string $phone, string $message, string $status, string $providerResponseOrError): void
+{
+    ensure_email_schema();
+    $stmt = db()->prepare(
+        'INSERT INTO sms_logs (order_id, sms_type, recipient_phone, message_text, status, provider_response, error_message)
+         VALUES (:order_id, :sms_type, :recipient_phone, :message_text, :status, :provider_response, :error_message)'
+    );
+    $stmt->execute([
+        'order_id' => $orderId > 0 ? $orderId : null,
+        'sms_type' => $type,
+        'recipient_phone' => $phone,
+        'message_text' => $message,
+        'status' => $status,
+        'provider_response' => $status === 'sent' ? $providerResponseOrError : null,
+        'error_message' => $status === 'failed' ? $providerResponseOrError : null,
+    ]);
+}
+
 function list_email_logs(int $limit = 20): array
 {
     ensure_email_schema();
@@ -703,6 +843,21 @@ function list_email_logs(int $limit = 20): array
          FROM email_logs
          LEFT JOIN orders ON orders.id = email_logs.order_id
          ORDER BY email_logs.created_at DESC
+         LIMIT ' . $limit
+    );
+
+    return $stmt->fetchAll();
+}
+
+function list_sms_logs(int $limit = 20): array
+{
+    ensure_email_schema();
+    $limit = max(1, min(100, $limit));
+    $stmt = db()->query(
+        'SELECT sms_logs.*, orders.order_number
+         FROM sms_logs
+         LEFT JOIN orders ON orders.id = sms_logs.order_id
+         ORDER BY sms_logs.created_at DESC
          LIMIT ' . $limit
     );
 

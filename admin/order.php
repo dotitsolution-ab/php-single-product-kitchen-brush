@@ -19,6 +19,9 @@ if (is_post()) {
         } elseif ($action === 'customer_email') {
             send_order_customer_email_once($orderId);
             flash('success', 'Customer email sent.');
+        } elseif ($action === 'customer_sms') {
+            send_order_customer_sms_once($orderId);
+            flash('success', 'Customer SMS sent.');
         } elseif ($action === 'shipment') {
             save_manual_shipment($orderId, $_POST);
             flash('success', 'Courier details saved.');
@@ -147,6 +150,14 @@ require BASE_PATH . '/includes/admin_header.php';
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="customer_email">
             <button class="button button-secondary button-full" type="submit">Send Customer Email</button>
+        </form>
+
+        <form class="content-panel" method="post">
+            <h2>Customer SMS</h2>
+            <p class="muted">Sends the customer order SMS once using the saved SMS template.</p>
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="customer_sms">
+            <button class="button button-secondary button-full" type="submit">Send Customer SMS</button>
         </form>
     </div>
 </section>
