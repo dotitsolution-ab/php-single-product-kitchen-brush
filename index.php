@@ -14,6 +14,9 @@ try {
 }
 
 $pageTitle = setting('site_name', app_config('app.name', 'Single Product Store'));
+$bodyClass = 'landing-body';
+$hideHeader = true;
+$hideFooter = true;
 require BASE_PATH . '/includes/header.php';
 ?>
 
@@ -28,85 +31,155 @@ require BASE_PATH . '/includes/header.php';
         <div class="alert alert-error">No active product found. Add a product from the admin panel.</div>
     </section>
 <?php else: ?>
-    <section class="hero">
-        <div class="container hero-grid">
-            <div class="hero-copy">
-                <span class="eyebrow">Cash on delivery</span>
+    <?php
+    $deliveryOptions = delivery_options($product);
+    $selectedDelivery = old('delivery_area', 'inside_dhaka');
+    if (!array_key_exists($selectedDelivery, $deliveryOptions)) {
+        $selectedDelivery = 'inside_dhaka';
+    }
+    $quantity = max(1, (int)old('quantity', '1'));
+    $insideCharge = (float)$deliveryOptions['inside_dhaka']['charge'];
+    $outsideCharge = (float)$deliveryOptions['outside_dhaka']['charge'];
+    $features = landing_rows('feature_rows', ['title', 'text', 'image']);
+    $usages = landing_rows('usage_rows', ['title', 'image']);
+    $reasons = landing_rows('reason_rows', ['title']);
+    ?>
+    <section class="funnel">
+        <div class="funnel-hero">
+            <div class="funnel-copy">
+                <span class="funnel-badge"><?= e(landing_value('badge')) ?></span>
                 <h1><?= e($product['name']) ?></h1>
-                <p class="lead"><?= e($product['tagline']) ?></p>
-                <div class="price-row">
-                    <strong><?= e(money($product['price'])) ?></strong>
+                <p><?= e(landing_value('hero_subtitle')) ?></p>
+
+                <div class="offer-card">
                     <?php if (!empty($product['compare_price'])): ?>
-                        <del><?= e(money($product['compare_price'])) ?></del>
+                        <del><?= e(taka($product['compare_price'])) ?></del>
                     <?php endif; ?>
+                    <span>এখন মাত্র</span>
+                    <strong><?= e(taka($product['price'])) ?></strong>
+                    <em><?= e(landing_value('discount_label')) ?></em>
                 </div>
-                <div class="hero-actions">
-                    <a class="button button-primary" href="#checkout">Order Now</a>
-                    <a class="button button-secondary" href="<?= e(base_url('track.php')) ?>">Track Order</a>
+
+                <a class="funnel-cta" href="#checkout"><?= e(landing_value('cta_text')) ?></a>
+
+                <div class="delivery-strip">
+                    <div>
+                        <strong>ঢাকার ভিতরে</strong>
+                        <span>ডেলিভারি <?= e(taka($insideCharge)) ?></span>
+                    </div>
+                    <div>
+                        <strong>ঢাকার বাইরে</strong>
+                        <span>ডেলিভারি <?= e(taka($outsideCharge)) ?></span>
+                    </div>
                 </div>
             </div>
-            <div class="product-visual">
-                <img src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="eager" width="900" height="700">
+
+            <div class="hero-product">
+                <img class="hero-main-img" src="<?= e($product['image_url']) ?>" alt="<?= e($product['name']) ?>" loading="eager" width="760" height="760">
+                <img class="hero-demo-img" src="<?= e(landing_value('demo_image_url')) ?>" alt="Product demo" loading="lazy" width="260" height="260">
             </div>
         </div>
-    </section>
 
-    <section class="container section product-section">
-        <div class="content-panel">
-            <h2>Product Details</h2>
-            <p><?= nl2br(e($product['description'])) ?></p>
-            <ul class="check-list">
-                <?php foreach (product_highlights($product) as $highlight): ?>
-                    <li><?= e($highlight) ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
+        <?php if ($features): ?>
+            <section class="funnel-section">
+                <h2>কেন এই রোটেটিং ক্লিনিং ব্রাশ?</h2>
+                <div class="feature-grid">
+                    <?php foreach ($features as $feature): ?>
+                        <article class="feature-tile">
+                            <?php if ($feature['image'] !== ''): ?>
+                                <img src="<?= e($feature['image']) ?>" alt="<?= e($feature['title']) ?>" loading="lazy">
+                            <?php endif; ?>
+                            <strong><?= e($feature['title']) ?></strong>
+                            <?php if ($feature['text'] !== ''): ?>
+                                <span><?= e($feature['text']) ?></span>
+                            <?php endif; ?>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
 
-        <form id="checkout" class="checkout-panel" method="post" action="<?= e(base_url('checkout.php')) ?>">
-            <h2>Complete Order</h2>
-            <?php if ($message = flash('error')): ?>
-                <div class="alert alert-error"><?= e($message) ?></div>
-            <?php endif; ?>
-            <?= csrf_field() ?>
-            <label>
-                Name
-                <input type="text" name="name" value="<?= e(old('name')) ?>" autocomplete="name" required maxlength="120">
-            </label>
-            <label>
-                Phone
-                <span class="phone-field">
-                    <span class="phone-prefix">+88</span>
-                    <input type="tel" name="phone" value="<?= e(normalize_phone(old('phone'))) ?>" autocomplete="tel" inputmode="numeric" pattern="01[3-9][0-9]{8}" maxlength="11" data-phone-input required placeholder="01XXXXXXXXX">
-                </span>
-            </label>
-            <label>
-                Address
-                <textarea name="address" rows="3" required maxlength="500"><?= e(old('address')) ?></textarea>
-            </label>
-            <label>
-                District / Area
-                <input type="text" name="district_area" value="<?= e(old('district_area')) ?>" required maxlength="120">
-            </label>
-            <div class="form-grid">
+        <?php if ($usages): ?>
+            <section class="funnel-section">
+                <h2>ব্যবহারের উপায়?</h2>
+                <div class="usage-grid">
+                    <?php foreach ($usages as $usage): ?>
+                        <article class="usage-card">
+                            <?php if ($usage['image'] !== ''): ?>
+                                <img src="<?= e($usage['image']) ?>" alt="<?= e($usage['title']) ?>" loading="lazy">
+                            <?php endif; ?>
+                            <strong><?= e($usage['title']) ?></strong>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
+        <?php if ($reasons): ?>
+            <section class="funnel-section">
+                <h2>কেন এটি সবার পছন্দ?</h2>
+                <div class="reason-strip">
+                    <?php foreach ($reasons as $reason): ?>
+                        <div><span>✓</span><?= e($reason['title']) ?></div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
+        <section id="checkout" class="funnel-order">
+            <form class="order-card" method="post" action="<?= e(base_url('checkout.php')) ?>" data-order-form data-unit-price="<?= e((string)(float)$product['price']) ?>" data-inside-charge="<?= e((string)$insideCharge) ?>" data-outside-charge="<?= e((string)$outsideCharge) ?>">
+                <h2>আপনার অর্ডার</h2>
+                <?php if ($message = flash('error')): ?>
+                    <div class="alert alert-error"><?= e($message) ?></div>
+                <?php endif; ?>
+                <?= csrf_field() ?>
+
+                <p class="form-label">কয় পিস অর্ডার করবেন?</p>
+                <div class="pill-options" role="group" aria-label="Quantity">
+                    <?php foreach ([1, 2, 3, 4] as $option): ?>
+                        <label>
+                            <input type="radio" name="quantity" value="<?= e($option) ?>" <?= $quantity === $option ? 'checked' : '' ?>>
+                            <span><?= e($option) ?> পিস<?= $option === 4 ? '+' : '' ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+
+                <p class="form-label">ডেলিভারি এরিয়া নির্বাচন করুন</p>
+                <div class="pill-options two">
+                    <?php foreach ($deliveryOptions as $key => $option): ?>
+                        <label>
+                            <input type="radio" name="delivery_area" value="<?= e($key) ?>" <?= $selectedDelivery === $key ? 'checked' : '' ?>>
+                            <span><?= e($option['label']) ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+
                 <label>
-                    Quantity
-                    <input type="number" name="quantity" value="<?= e(old('quantity', '1')) ?>" min="1" max="<?= e($product['stock']) ?>" required>
+                    <input type="text" name="name" value="<?= e(old('name')) ?>" autocomplete="name" required maxlength="120" placeholder="আপনার নাম">
                 </label>
                 <label>
-                    Delivery
-                    <input type="text" value="<?= e(money($product['delivery_charge'])) ?>" disabled>
+                    <span class="phone-field">
+                        <span class="phone-prefix">+88</span>
+                        <input type="tel" name="phone" value="<?= e(normalize_phone(old('phone'))) ?>" autocomplete="tel" inputmode="numeric" pattern="01[3-9][0-9]{8}" maxlength="11" data-phone-input required placeholder="মোবাইল নম্বর">
+                    </span>
                 </label>
-            </div>
-            <label>
-                Delivery Note
-                <textarea name="delivery_note" rows="2" maxlength="500"><?= e(old('delivery_note')) ?></textarea>
-            </label>
-            <div class="order-total">
-                <span>Total starts from</span>
-                <strong><?= e(money((float)$product['price'] + (float)$product['delivery_charge'])) ?></strong>
-            </div>
-            <button class="button button-primary button-full" type="submit">Place COD Order</button>
-        </form>
+                <label>
+                    <textarea name="address" rows="3" required maxlength="500" placeholder="সম্পূর্ণ ঠিকানা"><?= e(old('address')) ?></textarea>
+                </label>
+                <input type="hidden" name="delivery_note" value="">
+                <button class="funnel-submit" type="submit">অর্ডার কনফার্ম করুন</button>
+                <p class="secure-note">আপনার তথ্য ১০০% নিরাপদ এবং গোপন রাখা হবে</p>
+            </form>
+
+            <aside class="order-card summary-card">
+                <h2>অর্ডার সারসংক্ষেপ</h2>
+                <div class="summary-row"><span>পণ্যের নাম:</span><strong><?= e($product['name']) ?></strong></div>
+                <div class="summary-row"><span>পরিমাণ:</span><strong><span data-summary-qty><?= e($quantity) ?></span> পিস</strong></div>
+                <div class="summary-row"><span>সাবটোটাল:</span><strong data-summary-subtotal><?= e(taka((float)$product['price'] * $quantity)) ?></strong></div>
+                <div class="summary-row"><span>ডেলিভারি:</span><strong data-summary-delivery><?= e(taka((float)$deliveryOptions[$selectedDelivery]['charge'])) ?></strong></div>
+                <div class="summary-total"><span>মোট:</span><strong data-summary-total><?= e(taka(((float)$product['price'] * $quantity) + (float)$deliveryOptions[$selectedDelivery]['charge'])) ?></strong></div>
+            </aside>
+        </section>
     </section>
 <?php endif; ?>
 

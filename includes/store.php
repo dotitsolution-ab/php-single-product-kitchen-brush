@@ -15,6 +15,70 @@ function product_highlights(array $product): array
     return array_values(array_filter(array_map('trim', $lines)));
 }
 
+function landing_defaults(): array
+{
+    return [
+        'badge' => 'স্মার্ট ক্লিনিং, সহজ জীবন',
+        'hero_subtitle' => 'দাগ দূর হবে সহজে, ক্লিনিং হবে আরামে ও নিরাপদে',
+        'discount_label' => '২৫% ছাড়',
+        'cta_text' => 'এখনই অর্ডার করুন',
+        'demo_image_url' => 'https://placehold.co/420x420/f8fafc/f97316?text=Cleaning+Demo',
+        'delivery_inside_charge' => '60',
+        'delivery_outside_charge' => '120',
+        'feature_rows' => "৩৬০° রোটেটিং ব্রাশ হেড|সব কোণায় পরিষ্কার|https://placehold.co/240x180/fff7ed/f97316?text=360\nশক্ত ব্রাশ|দাগ তুলতে সাহায্য করে|https://placehold.co/240x180/fff7ed/f97316?text=Strong\nলম্বা হ্যান্ডেল|ব্যবহারে সহজ|https://placehold.co/240x180/fff7ed/f97316?text=Handle\nহাঁড়ি-পাতিলের দাগ|সহজে ওঠাতে সহায়ক|https://placehold.co/240x180/fff7ed/f97316?text=Pot\nওয়াল হ্যাঙ্গিং|স্টোরেজ সহজ|https://placehold.co/240x180/fff7ed/f97316?text=Hang\nদ্রুত শুকায়|পানি ঝরে যায় সহজে|https://placehold.co/240x180/fff7ed/f97316?text=Dry",
+        'usage_rows' => "প্লেট|https://placehold.co/360x260/f8fafc/f97316?text=Plate\nফ্রাইপ্যান|https://placehold.co/360x260/f8fafc/f97316?text=Frypan\nহাঁড়ি|https://placehold.co/360x260/f8fafc/f97316?text=Pot\nসিঙ্ক|https://placehold.co/360x260/f8fafc/f97316?text=Sink",
+        'reason_rows' => "শ্রম ও সময় বাঁচায়\nদাগ দূর করে সহজে, স্ক্র্যাচ হয় না\nটেকসই রোটেশন, ঝামেলামুক্ত প্রয়োগ\nপচা গন্ধ কমায়, দাগ থাকে না",
+    ];
+}
+
+function landing_value(string $key): string
+{
+    $defaults = landing_defaults();
+    return setting('landing_' . $key, (string)($defaults[$key] ?? ''));
+}
+
+function landing_rows(string $key, array $columns): array
+{
+    $rows = [];
+    $lines = preg_split('/\r\n|\r|\n/', landing_value($key)) ?: [];
+
+    foreach ($lines as $line) {
+        $parts = array_map('trim', explode('|', trim($line)));
+        if ($parts === [''] || $parts[0] === '') {
+            continue;
+        }
+
+        $row = [];
+        foreach ($columns as $index => $column) {
+            $row[$column] = (string)($parts[$index] ?? '');
+        }
+        $rows[] = $row;
+    }
+
+    return $rows;
+}
+
+function delivery_options(array $product): array
+{
+    return [
+        'inside_dhaka' => [
+            'label' => 'ঢাকার ভিতরে',
+            'charge' => (float)landing_value('delivery_inside_charge'),
+        ],
+        'outside_dhaka' => [
+            'label' => 'ঢাকার বাইরে',
+            'charge' => (float)landing_value('delivery_outside_charge'),
+        ],
+    ];
+}
+
+function save_landing_content(array $data): void
+{
+    foreach (array_keys(landing_defaults()) as $key) {
+        save_setting('landing_' . $key, trim((string)($data['landing_' . $key] ?? '')));
+    }
+}
+
 function create_cod_order(array $data): array
 {
     $product = active_product();
@@ -25,7 +89,12 @@ function create_cod_order(array $data): array
     $name = trim((string)($data['name'] ?? ''));
     $phone = normalize_phone((string)($data['phone'] ?? ''));
     $address = trim((string)($data['address'] ?? ''));
-    $districtArea = trim((string)($data['district_area'] ?? ''));
+    $deliveryArea = (string)($data['delivery_area'] ?? 'inside_dhaka');
+    $deliveryOptions = delivery_options($product);
+    if (!array_key_exists($deliveryArea, $deliveryOptions)) {
+        $deliveryArea = 'inside_dhaka';
+    }
+    $districtArea = $deliveryOptions[$deliveryArea]['label'];
     $deliveryNote = trim((string)($data['delivery_note'] ?? ''));
     $quantity = max(1, (int)($data['quantity'] ?? 1));
 
@@ -38,16 +107,13 @@ function create_cod_order(array $data): array
     if ($address === '' || strlen($address) > 500) {
         throw new InvalidArgumentException('Please enter a valid delivery address.');
     }
-    if ($districtArea === '' || strlen($districtArea) > 120) {
-        throw new InvalidArgumentException('Please enter district or area.');
-    }
     if ((int)$product['stock'] < $quantity) {
         throw new InvalidArgumentException('Requested quantity is not available.');
     }
 
     $unitPrice = (float)$product['price'];
     $subtotal = $unitPrice * $quantity;
-    $deliveryCharge = (float)$product['delivery_charge'];
+    $deliveryCharge = (float)$deliveryOptions[$deliveryArea]['charge'];
     $total = $subtotal + $deliveryCharge;
     $pdo = db();
 
@@ -358,9 +424,11 @@ function save_product(array $data): void
         'highlights' => trim((string)$data['highlights']),
         'price' => (float)$data['price'],
         'compare_price' => $data['compare_price'] === '' ? null : (float)$data['compare_price'],
-        'delivery_charge' => (float)$data['delivery_charge'],
+        'delivery_charge' => (float)($data['landing_delivery_inside_charge'] ?? $data['delivery_charge']),
         'stock' => (int)$data['stock'],
         'image_url' => trim((string)$data['image_url']),
         'id' => (int)$product['id'],
     ]);
+
+    save_landing_content($data);
 }

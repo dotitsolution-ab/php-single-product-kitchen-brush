@@ -120,16 +120,16 @@ INSERT INTO products
     (name, slug, tagline, description, highlights, price, compare_price, delivery_charge, stock, image_url, is_active)
 VALUES
     (
-        'Premium Single Product',
-        'premium-single-product',
-        'Fast delivery, simple COD checkout',
-        'A focused single-product storefront built for fast mobile ordering.',
-        'Cash on delivery available\nFast delivery across Bangladesh\nQuality checked before shipping',
-        1490,
-        1990,
-        80,
+        '৩৬০° রোটেটিং কিচেন ক্লিনিং ব্রাশ',
+        'rotating-kitchen-cleaning-brush',
+        'স্মার্ট ক্লিনিং, সহজ জীবন',
+        'দাগ দূর হবে সহজে, ক্লিনিং হবে আরামে ও নিরাপদে।',
+        '৩৬০° রোটেটিং ব্রাশ হেড\nশক্ত ব্রাশ দাগ তুলতে সহায়ক\nলম্বা হ্যান্ডেল ব্যবহারে সহজ',
+        299,
+        399,
+        60,
         100,
-        'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80',
+        'https://placehold.co/760x760/fff7ed/f97316?text=Kitchen+Cleaning+Brush',
         1
     )
 ON DUPLICATE KEY UPDATE name = VALUES(name);

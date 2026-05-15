@@ -46,3 +46,56 @@ document.addEventListener('paste', function (event) {
     var text = (event.clipboardData || window.clipboardData).getData('text');
     input.value = normalizeBdPhone(text);
 });
+
+function formatTaka(amount) {
+    return new Intl.NumberFormat('en-US', {
+        maximumFractionDigits: 0
+    }).format(Number(amount || 0)) + ' টাকা';
+}
+
+function updateOrderSummary(form) {
+    if (!form || !form.matches('[data-order-form]')) {
+        return;
+    }
+
+    var unitPrice = Number(form.getAttribute('data-unit-price') || 0);
+    var insideCharge = Number(form.getAttribute('data-inside-charge') || 0);
+    var outsideCharge = Number(form.getAttribute('data-outside-charge') || 0);
+    var quantityInput = form.querySelector('input[name="quantity"]:checked');
+    var deliveryInput = form.querySelector('input[name="delivery_area"]:checked');
+    var quantity = quantityInput ? Number(quantityInput.value || 1) : 1;
+    var deliveryCharge = deliveryInput && deliveryInput.value === 'outside_dhaka' ? outsideCharge : insideCharge;
+    var subtotal = unitPrice * quantity;
+    var root = form.closest('.funnel-order') || document;
+
+    var qty = root.querySelector('[data-summary-qty]');
+    var subtotalNode = root.querySelector('[data-summary-subtotal]');
+    var deliveryNode = root.querySelector('[data-summary-delivery]');
+    var totalNode = root.querySelector('[data-summary-total]');
+
+    if (qty) {
+        qty.textContent = quantity;
+    }
+    if (subtotalNode) {
+        subtotalNode.textContent = formatTaka(subtotal);
+    }
+    if (deliveryNode) {
+        deliveryNode.textContent = formatTaka(deliveryCharge);
+    }
+    if (totalNode) {
+        totalNode.textContent = formatTaka(subtotal + deliveryCharge);
+    }
+}
+
+document.addEventListener('change', function (event) {
+    var input = event.target;
+    if (!input || !input.matches('[data-order-form] input[type="radio"]')) {
+        return;
+    }
+
+    updateOrderSummary(input.closest('[data-order-form]'));
+});
+
+document.querySelectorAll('[data-order-form]').forEach(function (form) {
+    updateOrderSummary(form);
+});

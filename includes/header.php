@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 $pageTitle = $pageTitle ?? setting('site_name', app_config('app.name', 'Single Product Store'));
 $bodyClass = $bodyClass ?? '';
+$hideHeader = $hideHeader ?? false;
 ?>
 <!doctype html>
 <html lang="en">
@@ -18,6 +19,7 @@ $bodyClass = $bodyClass ?? '';
 </head>
 <body class="<?= e($bodyClass) ?>">
 <?php render_gtm_noscript(); ?>
+<?php if (!$hideHeader): ?>
 <header class="site-header">
     <div class="container header-grid">
         <a class="brand" href="<?= e(base_url('/')) ?>"><?= e(setting('site_name', app_config('app.name', 'Store'))) ?></a>
@@ -28,5 +30,5 @@ $bodyClass = $bodyClass ?? '';
         </nav>
     </div>
 </header>
+<?php endif; ?>
 <main>
-

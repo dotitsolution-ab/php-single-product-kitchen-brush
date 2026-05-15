@@ -120,6 +120,11 @@ function money(mixed $amount): string
     return 'BDT ' . number_format((float)$amount, 0);
 }
 
+function taka(mixed $amount): string
+{
+    return number_format((float)$amount, 0) . ' টাকা';
+}
+
 function normalize_phone(string $phone): string
 {
     $digits = preg_replace('/\D+/', '', $phone) ?? '';
