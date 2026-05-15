@@ -8,6 +8,7 @@ Auth::requireAdmin();
 
 $pageTitle = 'Dashboard';
 $stats = dashboard_stats();
+$analytics = analytics_stats();
 $latestOrders = list_orders([]);
 require BASE_PATH . '/includes/admin_header.php';
 ?>
@@ -30,6 +31,32 @@ require BASE_PATH . '/includes/admin_header.php';
         <div class="stat-card">
             <span>Total Sales</span>
             <strong><?= e(money($stats['sales_total'])) ?></strong>
+        </div>
+    </div>
+
+    <div class="content-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Page Funnel</h2>
+                <p class="muted">Home page থেকে thank-you page পর্যন্ত visitor count.</p>
+            </div>
+        </div>
+        <div class="stats-grid analytics-grid">
+            <div class="stat-card">
+                <span>Home Visitors</span>
+                <strong><?= e($analytics['home']['unique_visitors']) ?></strong>
+                <small>Today: <?= e($analytics['home']['visitors_today']) ?> / Views: <?= e($analytics['home']['total_views']) ?></small>
+            </div>
+            <div class="stat-card">
+                <span>Thank You Visitors</span>
+                <strong><?= e($analytics['thank_you']['unique_visitors']) ?></strong>
+                <small>Today: <?= e($analytics['thank_you']['visitors_today']) ?> / Views: <?= e($analytics['thank_you']['total_views']) ?></small>
+            </div>
+            <div class="stat-card">
+                <span>Visit To Order Rate</span>
+                <strong><?= e((string)$analytics['conversion_rate']) ?>%</strong>
+                <small>Unique thank-you visitors / home visitors</small>
+            </div>
         </div>
     </div>
 

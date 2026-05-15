@@ -275,3 +275,24 @@ function render_order_success_tracking(array $order): void
     echo 'if(typeof fbq==="function"){fbq("track","Purchase",{value:' . json_encode((float)$order['total']) . ',currency:"BDT"});}';
     echo '</script>' . PHP_EOL;
 }
+
+function whatsapp_url(): string
+{
+    $phone = normalize_phone(setting('whatsapp_number', setting('contact_phone')));
+    if (!valid_bd_phone($phone)) {
+        return '';
+    }
+
+    $message = setting('whatsapp_message', 'Hello, I need help with my order.');
+    return 'https://wa.me/880' . substr($phone, 1) . '?text=' . rawurlencode($message);
+}
+
+function render_whatsapp_button(): void
+{
+    $url = whatsapp_url();
+    if ($url === '') {
+        return;
+    }
+
+    echo '<a class="whatsapp-float" href="' . e($url) . '" target="_blank" rel="noopener" aria-label="Message us on WhatsApp">WhatsApp</a>' . PHP_EOL;
+}

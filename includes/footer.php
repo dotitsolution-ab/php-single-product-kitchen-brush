@@ -13,6 +13,7 @@ $hideFooter = $hideFooter ?? false;
     </div>
 </footer>
 <?php endif; ?>
+<?php render_whatsapp_button(); ?>
 <script src="<?= e(asset_url('assets/js/app.js')) ?>" defer></script>
 </body>
 </html>

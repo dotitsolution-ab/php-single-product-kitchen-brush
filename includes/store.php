@@ -84,6 +84,122 @@ function db_column_exists(string $table, string $column): bool
     return (int)$stmt->fetchColumn() > 0;
 }
 
+function ensure_analytics_schema(): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+
+    if (!db_table_exists('orders')) {
+        $checked = true;
+        return;
+    }
+
+    db()->exec(
+        "CREATE TABLE IF NOT EXISTS page_visits (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            page_key VARCHAR(40) NOT NULL,
+            visitor_hash CHAR(64) NOT NULL,
+            session_id VARCHAR(128) NULL,
+            ip_address VARCHAR(45) NULL,
+            user_agent VARCHAR(500) NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_page_visits_page_created (page_key, created_at),
+            INDEX idx_page_visits_visitor (page_key, visitor_hash)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    $checked = true;
+}
+
+function track_page_visit(string $pageKey): void
+{
+    try {
+        ensure_analytics_schema();
+        if (!db_table_exists('page_visits')) {
+            return;
+        }
+
+        $visitorId = (string)($_COOKIE['sp_visitor_id'] ?? '');
+        if (!preg_match('/^[a-f0-9]{32}$/', $visitorId)) {
+            $visitorId = bin2hex(random_bytes(16));
+            if (!headers_sent()) {
+                setcookie('sp_visitor_id', $visitorId, [
+                    'expires' => time() + 31536000,
+                    'path' => '/',
+                    'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            }
+        }
+
+        $pageKey = preg_replace('/[^a-z0-9_]/', '', strtolower($pageKey)) ?: 'page';
+        $stmt = db()->prepare(
+            'INSERT INTO page_visits (page_key, visitor_hash, session_id, ip_address, user_agent)
+             VALUES (:page_key, :visitor_hash, :session_id, :ip_address, :user_agent)'
+        );
+        $stmt->execute([
+            'page_key' => $pageKey,
+            'visitor_hash' => hash('sha256', $visitorId),
+            'session_id' => session_id(),
+            'ip_address' => substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45),
+            'user_agent' => substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 500),
+        ]);
+    } catch (Throwable) {
+        // Analytics should never block a public page.
+    }
+}
+
+function analytics_stats(): array
+{
+    try {
+        ensure_analytics_schema();
+        if (!db_table_exists('page_visits')) {
+            return default_analytics_stats();
+        }
+
+        $stats = default_analytics_stats();
+        $stmt = db()->query(
+            "SELECT
+                page_key,
+                COUNT(*) AS total_views,
+                COUNT(DISTINCT visitor_hash) AS unique_visitors,
+                SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) AS views_today,
+                COUNT(DISTINCT CASE WHEN DATE(created_at) = CURDATE() THEN visitor_hash END) AS visitors_today
+             FROM page_visits
+             WHERE page_key IN ('home', 'thank_you')
+             GROUP BY page_key"
+        );
+
+        foreach ($stmt->fetchAll() as $row) {
+            $key = (string)$row['page_key'];
+            $stats[$key] = [
+                'total_views' => (int)$row['total_views'],
+                'unique_visitors' => (int)$row['unique_visitors'],
+                'views_today' => (int)$row['views_today'],
+                'visitors_today' => (int)$row['visitors_today'],
+            ];
+        }
+
+        $home = max(1, $stats['home']['unique_visitors']);
+        $stats['conversion_rate'] = round(($stats['thank_you']['unique_visitors'] / $home) * 100, 1);
+        return $stats;
+    } catch (Throwable) {
+        return default_analytics_stats();
+    }
+}
+
+function default_analytics_stats(): array
+{
+    return [
+        'home' => ['total_views' => 0, 'unique_visitors' => 0, 'views_today' => 0, 'visitors_today' => 0],
+        'thank_you' => ['total_views' => 0, 'unique_visitors' => 0, 'views_today' => 0, 'visitors_today' => 0],
+        'conversion_rate' => 0.0,
+    ];
+}
+
 function email_defaults(): array
 {
     return [

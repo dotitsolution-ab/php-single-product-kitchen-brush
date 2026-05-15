@@ -13,6 +13,10 @@ try {
     $setupError = $exception->getMessage();
 }
 
+if ($setupError === null) {
+    track_page_visit('home');
+}
+
 $pageTitle = setting('site_name', app_config('app.name', 'Single Product Store'));
 $bodyClass = 'landing-body';
 $hideHeader = true;

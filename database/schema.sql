@@ -148,6 +148,18 @@ CREATE TABLE IF NOT EXISTS sms_logs (
     CONSTRAINT fk_sms_logs_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS page_visits (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    page_key VARCHAR(40) NOT NULL,
+    visitor_hash CHAR(64) NOT NULL,
+    session_id VARCHAR(128) NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent VARCHAR(500) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_page_visits_page_created (page_key, created_at),
+    INDEX idx_page_visits_visitor (page_key, visitor_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO products
     (name, slug, tagline, description, highlights, price, compare_price, delivery_charge, stock, image_url, is_active)
 VALUES
@@ -170,6 +182,8 @@ INSERT INTO settings (key_name, value_text) VALUES
     ('site_name', 'Single Product Store'),
     ('contact_phone', '01700000000'),
     ('support_email', 'support@example.com'),
+    ('whatsapp_number', ''),
+    ('whatsapp_message', 'Hello, I need help with my order.'),
     ('gtm_id', ''),
     ('ga4_id', ''),
     ('facebook_pixel_id', ''),
