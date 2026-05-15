@@ -1,0 +1,365 @@
+<?php
+
+declare(strict_types=1);
+
+function active_product(): ?array
+{
+    $stmt = db()->query('SELECT * FROM products WHERE is_active = 1 ORDER BY id ASC LIMIT 1');
+    $product = $stmt->fetch();
+    return $product ?: null;
+}
+
+function product_highlights(array $product): array
+{
+    $lines = preg_split('/\r\n|\r|\n/', (string)($product['highlights'] ?? '')) ?: [];
+    return array_values(array_filter(array_map('trim', $lines)));
+}
+
+function create_cod_order(array $data): array
+{
+    $product = active_product();
+    if (!$product) {
+        throw new RuntimeException('No active product is available.');
+    }
+
+    $name = trim((string)($data['name'] ?? ''));
+    $phone = normalize_phone((string)($data['phone'] ?? ''));
+    $address = trim((string)($data['address'] ?? ''));
+    $districtArea = trim((string)($data['district_area'] ?? ''));
+    $deliveryNote = trim((string)($data['delivery_note'] ?? ''));
+    $quantity = max(1, (int)($data['quantity'] ?? 1));
+
+    if ($name === '' || strlen($name) > 120) {
+        throw new InvalidArgumentException('Please enter a valid name.');
+    }
+    if (!valid_bd_phone($phone)) {
+        throw new InvalidArgumentException('Please enter a valid Bangladesh phone number.');
+    }
+    if ($address === '' || strlen($address) > 500) {
+        throw new InvalidArgumentException('Please enter a valid delivery address.');
+    }
+    if ($districtArea === '' || strlen($districtArea) > 120) {
+        throw new InvalidArgumentException('Please enter district or area.');
+    }
+    if ((int)$product['stock'] < $quantity) {
+        throw new InvalidArgumentException('Requested quantity is not available.');
+    }
+
+    $unitPrice = (float)$product['price'];
+    $subtotal = $unitPrice * $quantity;
+    $deliveryCharge = (float)$product['delivery_charge'];
+    $total = $subtotal + $deliveryCharge;
+    $pdo = db();
+
+    $pdo->beginTransaction();
+    try {
+        $customerId = upsert_customer($name, $phone, $address, $districtArea);
+        $orderNumber = unique_order_number();
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO orders
+            (order_number, customer_id, customer_name, customer_phone, customer_address, district_area, delivery_note, subtotal, delivery_charge, total, payment_method, status)
+            VALUES
+            (:order_number, :customer_id, :customer_name, :customer_phone, :customer_address, :district_area, :delivery_note, :subtotal, :delivery_charge, :total, :payment_method, :status)'
+        );
+        $stmt->execute([
+            'order_number' => $orderNumber,
+            'customer_id' => $customerId,
+            'customer_name' => $name,
+            'customer_phone' => $phone,
+            'customer_address' => $address,
+            'district_area' => $districtArea,
+            'delivery_note' => $deliveryNote,
+            'subtotal' => $subtotal,
+            'delivery_charge' => $deliveryCharge,
+            'total' => $total,
+            'payment_method' => 'COD',
+            'status' => 'Pending',
+        ]);
+
+        $orderId = (int)$pdo->lastInsertId();
+        $item = $pdo->prepare(
+            'INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity, line_total)
+             VALUES (:order_id, :product_id, :product_name, :unit_price, :quantity, :line_total)'
+        );
+        $item->execute([
+            'order_id' => $orderId,
+            'product_id' => (int)$product['id'],
+            'product_name' => $product['name'],
+            'unit_price' => $unitPrice,
+            'quantity' => $quantity,
+            'line_total' => $subtotal,
+        ]);
+
+        $stock = $pdo->prepare('UPDATE products SET stock = stock - :quantity_remove WHERE id = :id AND stock >= :quantity_check');
+        $stock->execute([
+            'quantity_remove' => $quantity,
+            'quantity_check' => $quantity,
+            'id' => (int)$product['id'],
+        ]);
+        if ($stock->rowCount() !== 1) {
+            throw new InvalidArgumentException('Requested quantity is no longer available.');
+        }
+
+        $pdo->commit();
+        return order_with_items_by_id($orderId) ?? [];
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
+}
+
+function upsert_customer(string $name, string $phone, string $address, string $districtArea): int
+{
+    $stmt = db()->prepare('SELECT id FROM customers WHERE phone = :phone LIMIT 1');
+    $stmt->execute(['phone' => $phone]);
+    $customer = $stmt->fetch();
+
+    if ($customer) {
+        $update = db()->prepare(
+            'UPDATE customers SET name = :name, address = :address, district_area = :district_area, updated_at = NOW() WHERE id = :id'
+        );
+        $update->execute([
+            'name' => $name,
+            'address' => $address,
+            'district_area' => $districtArea,
+            'id' => (int)$customer['id'],
+        ]);
+        return (int)$customer['id'];
+    }
+
+    $insert = db()->prepare(
+        'INSERT INTO customers (name, phone, address, district_area) VALUES (:name, :phone, :address, :district_area)'
+    );
+    $insert->execute([
+        'name' => $name,
+        'phone' => $phone,
+        'address' => $address,
+        'district_area' => $districtArea,
+    ]);
+
+    return (int)db()->lastInsertId();
+}
+
+function unique_order_number(): string
+{
+    do {
+        $number = 'SP' . date('ymd') . strtoupper(bin2hex(random_bytes(3)));
+        $stmt = db()->prepare('SELECT id FROM orders WHERE order_number = :order_number LIMIT 1');
+        $stmt->execute(['order_number' => $number]);
+    } while ($stmt->fetch());
+
+    return $number;
+}
+
+function order_with_items_by_id(int $id): ?array
+{
+    $stmt = db()->prepare('SELECT * FROM orders WHERE id = :id LIMIT 1');
+    $stmt->execute(['id' => $id]);
+    $order = $stmt->fetch();
+    if (!$order) {
+        return null;
+    }
+
+    $order['items'] = order_items((int)$order['id']);
+    $order['shipment'] = order_shipment((int)$order['id']);
+    return $order;
+}
+
+function order_by_number(string $orderNumber, ?string $phone = null): ?array
+{
+    $sql = 'SELECT * FROM orders WHERE order_number = :order_number';
+    $params = ['order_number' => strtoupper(trim($orderNumber))];
+
+    if ($phone !== null) {
+        $sql .= ' AND customer_phone = :phone';
+        $params['phone'] = normalize_phone($phone);
+    }
+
+    $sql .= ' LIMIT 1';
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    $order = $stmt->fetch();
+    if (!$order) {
+        return null;
+    }
+
+    $order['items'] = order_items((int)$order['id']);
+    $order['shipment'] = order_shipment((int)$order['id']);
+    return $order;
+}
+
+function order_items(int $orderId): array
+{
+    $stmt = db()->prepare('SELECT * FROM order_items WHERE order_id = :order_id ORDER BY id ASC');
+    $stmt->execute(['order_id' => $orderId]);
+    return $stmt->fetchAll();
+}
+
+function order_shipment(int $orderId): ?array
+{
+    $stmt = db()->prepare('SELECT * FROM courier_shipments WHERE order_id = :order_id LIMIT 1');
+    $stmt->execute(['order_id' => $orderId]);
+    $shipment = $stmt->fetch();
+    return $shipment ?: null;
+}
+
+function list_orders(array $filters = []): array
+{
+    $where = [];
+    $params = [];
+
+    $status = (string)($filters['status'] ?? '');
+    if ($status !== '' && in_array($status, status_options(), true)) {
+        $where[] = 'status = :status';
+        $params['status'] = $status;
+    }
+
+    $query = trim((string)($filters['q'] ?? ''));
+    if ($query !== '') {
+        $where[] = '(order_number LIKE :query_order OR customer_name LIKE :query_customer OR customer_phone LIKE :query_phone)';
+        $likeQuery = '%' . $query . '%';
+        $params['query_order'] = $likeQuery;
+        $params['query_customer'] = $likeQuery;
+        $params['query_phone'] = $likeQuery;
+    }
+
+    $sql = 'SELECT * FROM orders';
+    if ($where) {
+        $sql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $sql .= ' ORDER BY created_at DESC LIMIT 100';
+
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
+function dashboard_stats(): array
+{
+    $stats = [
+        'orders_today' => 0,
+        'orders_total' => 0,
+        'sales_total' => 0.0,
+        'pending' => 0,
+    ];
+
+    $row = db()->query(
+        "SELECT
+            COUNT(*) AS orders_total,
+            COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END), 0) AS orders_today,
+            COALESCE(SUM(total), 0) AS sales_total,
+            COALESCE(SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END), 0) AS pending
+         FROM orders"
+    )->fetch();
+
+    if ($row) {
+        $stats = array_merge($stats, $row);
+    }
+
+    return $stats;
+}
+
+function update_order_status(int $orderId, string $status): void
+{
+    if (!in_array($status, status_options(), true)) {
+        throw new InvalidArgumentException('Invalid status.');
+    }
+
+    $stmt = db()->prepare('UPDATE orders SET status = :status, updated_at = NOW() WHERE id = :id');
+    $stmt->execute([
+        'status' => $status,
+        'id' => $orderId,
+    ]);
+}
+
+function save_manual_shipment(int $orderId, array $data): void
+{
+    $stmt = db()->prepare(
+        'INSERT INTO courier_shipments
+        (order_id, courier_name, consignment_id, tracking_code, shipment_status, raw_response)
+        VALUES (:order_id, :courier_name, :consignment_id, :tracking_code, :shipment_status, :raw_response)
+        ON DUPLICATE KEY UPDATE
+            courier_name = VALUES(courier_name),
+            consignment_id = VALUES(consignment_id),
+            tracking_code = VALUES(tracking_code),
+            shipment_status = VALUES(shipment_status),
+            raw_response = VALUES(raw_response),
+            updated_at = NOW()'
+    );
+    $stmt->execute([
+        'order_id' => $orderId,
+        'courier_name' => trim((string)($data['courier_name'] ?? 'Steadfast')),
+        'consignment_id' => trim((string)($data['consignment_id'] ?? '')),
+        'tracking_code' => trim((string)($data['tracking_code'] ?? '')),
+        'shipment_status' => trim((string)($data['shipment_status'] ?? '')),
+        'raw_response' => trim((string)($data['raw_response'] ?? '')) === '' ? null : (string)$data['raw_response'],
+    ]);
+}
+
+function create_steadfast_shipment(int $orderId): array
+{
+    $order = order_with_items_by_id($orderId);
+    if (!$order) {
+        throw new InvalidArgumentException('Order not found.');
+    }
+
+    $response = (new SteadfastClient())->createOrder($order);
+    $consignment = $response['consignment']
+        ?? $response['data']['consignment']
+        ?? $response['data']
+        ?? [];
+
+    $consignmentId = (string)($consignment['consignment_id'] ?? $consignment['id'] ?? '');
+    $trackingCode = (string)($consignment['tracking_code'] ?? $consignment['trackingCode'] ?? '');
+    $shipmentStatus = (string)($consignment['status'] ?? $response['status'] ?? 'Created');
+
+    save_manual_shipment($orderId, [
+        'courier_name' => 'Steadfast',
+        'consignment_id' => $consignmentId,
+        'tracking_code' => $trackingCode,
+        'shipment_status' => $shipmentStatus,
+        'raw_response' => json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+    ]);
+
+    if ($order['status'] === 'Pending' || $order['status'] === 'Confirmed') {
+        update_order_status($orderId, 'Processing');
+    }
+
+    return $response;
+}
+
+function save_product(array $data): void
+{
+    $product = active_product();
+    if (!$product) {
+        throw new RuntimeException('No product found.');
+    }
+
+    $stmt = db()->prepare(
+        'UPDATE products SET
+            name = :name,
+            tagline = :tagline,
+            description = :description,
+            highlights = :highlights,
+            price = :price,
+            compare_price = :compare_price,
+            delivery_charge = :delivery_charge,
+            stock = :stock,
+            image_url = :image_url,
+            updated_at = NOW()
+         WHERE id = :id'
+    );
+    $stmt->execute([
+        'name' => trim((string)$data['name']),
+        'tagline' => trim((string)$data['tagline']),
+        'description' => trim((string)$data['description']),
+        'highlights' => trim((string)$data['highlights']),
+        'price' => (float)$data['price'],
+        'compare_price' => $data['compare_price'] === '' ? null : (float)$data['compare_price'],
+        'delivery_charge' => (float)$data['delivery_charge'],
+        'stock' => (int)$data['stock'],
+        'image_url' => trim((string)$data['image_url']),
+        'id' => (int)$product['id'],
+    ]);
+}
