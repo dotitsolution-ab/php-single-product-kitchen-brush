@@ -793,14 +793,14 @@ function send_order_email(
     }
 
     try {
-        $response = (new MailjetMailer())->send($toEmail, $toName, $subject, $html, $text);
+        $response = (new ZeptoMailMailer())->send($toEmail, $toName, $subject, $html, $text);
         log_email_event(
             (int)($order['id'] ?? 0),
             $type,
             $toEmail,
             $subject,
             'sent',
-            extract_mailjet_message_id($response),
+            extract_email_message_id($response),
             null
         );
     } catch (Throwable $exception) {
@@ -980,10 +980,14 @@ function list_sms_logs(int $limit = 20): array
     return $stmt->fetchAll();
 }
 
-function extract_mailjet_message_id(array $response): ?string
+function extract_email_message_id(array $response): ?string
 {
     $message = $response['Messages'][0]['To'][0] ?? [];
-    $id = $message['MessageUUID'] ?? $message['MessageID'] ?? null;
+    $id = $message['MessageUUID']
+        ?? $message['MessageID']
+        ?? $response['request_id']
+        ?? $response['data'][0]['request_id']
+        ?? null;
     return $id === null ? null : (string)$id;
 }
 

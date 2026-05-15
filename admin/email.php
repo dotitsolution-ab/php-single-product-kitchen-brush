@@ -11,7 +11,7 @@ $plainSettings = [
     'mail_from_email' => 'From Email',
     'mail_from_name' => 'From Name',
     'admin_notification_email' => 'Admin Notification Email',
-    'mailjet_api_key' => 'Mailjet API Key',
+    'zeptomail_api_url' => 'ZeptoMail API URL',
 ];
 
 $templateSettings = [
@@ -54,9 +54,9 @@ if (is_post()) {
         save_setting('sms_request_body', trim((string)($_POST['sms_request_body'] ?? '')));
         save_setting('customer_order_sms_message', trim((string)($_POST['customer_order_sms_message'] ?? '')));
 
-        $secret = trim((string)($_POST['mailjet_secret_key'] ?? ''));
-        if ($secret !== '') {
-            save_setting('mailjet_secret_key', $secret);
+        $sendMailToken = trim((string)($_POST['zeptomail_send_token'] ?? ''));
+        if ($sendMailToken !== '') {
+            save_setting('zeptomail_send_token', $sendMailToken);
         }
 
         flash('success', 'Notification settings updated.');
@@ -75,7 +75,7 @@ require BASE_PATH . '/includes/admin_header.php';
     <div class="panel-head">
         <div>
             <h1>Notifications</h1>
-            <p class="muted">Mailjet email, SMS API, and editable order notification templates.</p>
+            <p class="muted">ZeptoMail email, SMS API, and editable order notification templates.</p>
         </div>
     </div>
 
@@ -83,7 +83,7 @@ require BASE_PATH . '/includes/admin_header.php';
         <?= csrf_field() ?>
 
         <div class="settings-card">
-            <h2>Mailjet API</h2>
+            <h2>ZeptoMail API</h2>
             <label class="toggle-line">
                 <input type="checkbox" name="email_enabled" value="1" <?= setting('email_enabled', '0') === '1' ? 'checked' : '' ?>>
                 Enable email sending
@@ -94,6 +94,7 @@ require BASE_PATH . '/includes/admin_header.php';
                     $fallback = match ($key) {
                         'mail_from_email', 'admin_notification_email' => setting('support_email'),
                         'mail_from_name' => setting('site_name'),
+                        'zeptomail_api_url' => 'https://api.zeptomail.com/v1.1/email',
                         default => '',
                     };
                     ?>
@@ -103,8 +104,9 @@ require BASE_PATH . '/includes/admin_header.php';
                     </label>
                 <?php endforeach; ?>
                 <label>
-                    Mailjet Secret Key
-                    <input type="password" name="mailjet_secret_key" placeholder="Leave blank to keep current key">
+                    ZeptoMail Send Mail Token
+                    <input type="password" name="zeptomail_send_token" placeholder="Leave blank to keep current token">
+                    <span class="field-help">ZeptoMail Agent → SMTP/API → API tab থেকে Send Mail Token নিন।</span>
                 </label>
             </div>
         </div>
