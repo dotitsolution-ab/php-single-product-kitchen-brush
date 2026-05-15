@@ -43,14 +43,15 @@ require BASE_PATH . '/includes/header.php';
     $features = landing_rows('feature_rows', ['title', 'text', 'image']);
     $usages = landing_rows('usage_rows', ['title', 'image']);
     $reasons = landing_rows('reason_rows', ['title']);
-    $heroImage = image_src(landing_value('hero_image_url'), (string)$product['image_url']);
-    $demoImage = image_src(landing_value('demo_image_url'), (string)$product['image_url']);
+    $heroTitle = landing_value('hero_title');
+    $heroImage = image_src(landing_image_value('hero_image_url'), (string)$product['image_url']);
+    $demoImage = image_src(landing_image_value('demo_image_url'), 'assets/images/kitchen-brush-plate-demo.jpg');
     ?>
     <section class="funnel">
         <div class="funnel-hero">
             <div class="funnel-copy">
                 <span class="funnel-badge"><?= e(landing_value('badge')) ?></span>
-                <h1><?= e($product['name']) ?></h1>
+                <h1><?= e($heroTitle) ?></h1>
                 <p><?= e(landing_value('hero_subtitle')) ?></p>
 
                 <div class="offer-card">

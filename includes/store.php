@@ -19,6 +19,7 @@ function landing_defaults(): array
 {
     return [
         'badge' => 'স্মার্ট ক্লিনিং, সহজ জীবন',
+        'hero_title' => '৩৬০° রোটেটিং কিচেন ক্লিনিং ব্রাশ',
         'hero_subtitle' => 'দাগ দূর হবে সহজে, ক্লিনিং হবে আরামে ও নিরাপদে',
         'discount_label' => '২৫% ছাড়',
         'cta_text' => 'এখনই অর্ডার করুন',
@@ -36,6 +37,18 @@ function landing_value(string $key): string
 {
     $defaults = landing_defaults();
     return setting('landing_' . $key, (string)($defaults[$key] ?? ''));
+}
+
+function landing_image_value(string $key): string
+{
+    $value = landing_value($key);
+    $defaults = landing_defaults();
+
+    if ($value === '' || str_contains($value, 'placehold.co')) {
+        return (string)($defaults[$key] ?? '');
+    }
+
+    return $value;
 }
 
 function image_src(string $value, string $fallback = ''): string

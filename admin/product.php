@@ -88,6 +88,10 @@ require BASE_PATH . '/includes/admin_header.php';
                 <input type="text" name="landing_badge" value="<?= e(landing_value('badge')) ?>">
             </label>
             <label>
+                Hero Title
+                <textarea name="landing_hero_title" rows="2"><?= e(landing_value('hero_title')) ?></textarea>
+            </label>
+            <label>
                 Hero Subtitle
                 <textarea name="landing_hero_subtitle" rows="2"><?= e(landing_value('hero_subtitle')) ?></textarea>
             </label>
