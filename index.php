@@ -45,7 +45,6 @@ require BASE_PATH . '/includes/header.php';
     $reasons = landing_rows('reason_rows', ['title']);
     $heroTitle = landing_value('hero_title');
     $heroImage = image_src(landing_image_value('hero_image_url'), (string)$product['image_url']);
-    $demoImage = image_src(landing_image_value('demo_image_url'), 'assets/images/kitchen-brush-plate-demo.jpg');
     ?>
     <section class="funnel">
         <div class="funnel-hero">
@@ -79,9 +78,6 @@ require BASE_PATH . '/includes/header.php';
 
             <div class="hero-product">
                 <img class="hero-main-img" src="<?= e($heroImage) ?>" alt="<?= e($product['name']) ?>" loading="eager" width="760" height="760">
-                <?php if ($demoImage !== ''): ?>
-                    <img class="hero-demo-img" src="<?= e($demoImage) ?>" alt="Product demo" loading="lazy" width="260" height="260">
-                <?php endif; ?>
             </div>
         </div>
 
@@ -187,6 +183,10 @@ require BASE_PATH . '/includes/header.php';
                 <div class="summary-total"><span>মোট:</span><strong data-summary-total><?= e(taka(((float)$product['price'] * $quantity) + (float)$deliveryOptions[$selectedDelivery]['charge'])) ?></strong></div>
             </aside>
         </section>
+        <a class="sticky-order-cta" href="#checkout">
+            <span><?= e(landing_value('cta_text')) ?></span>
+            <strong><?= e(taka($product['price'])) ?></strong>
+        </a>
     </section>
 <?php endif; ?>
 

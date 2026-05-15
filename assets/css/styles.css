@@ -748,7 +748,8 @@ select:focus {
 }
 
 .landing-body {
-    background: #fffaf4;
+    padding-bottom: 88px;
+    background: #f8f1e8;
 }
 
 .landing-body main {
@@ -756,101 +757,82 @@ select:focus {
 }
 
 .funnel {
-    width: min(1220px, 100%);
+    width: min(1180px, 100%);
     margin-inline: auto;
     background: #fff;
-    box-shadow: 0 24px 80px rgba(30, 24, 18, 0.12);
+    box-shadow: 0 20px 64px rgba(30, 24, 18, 0.1);
 }
 
 .funnel-hero {
     position: relative;
     overflow: hidden;
-    min-height: 650px;
+    min-height: 560px;
     display: grid;
-    grid-template-columns: minmax(380px, 0.86fr) minmax(460px, 1.14fr);
-    gap: 36px;
+    grid-template-columns: minmax(360px, 0.92fr) minmax(440px, 1.08fr);
+    gap: 40px;
     align-items: center;
-    padding: 34px 44px 34px;
-    background:
-        radial-gradient(circle at 84% 12%, rgba(245, 158, 11, 0.2), transparent 24%),
-        radial-gradient(circle at 74% 70%, rgba(13, 148, 136, 0.1), transparent 22%),
-        linear-gradient(115deg, #fffaf3 0%, #fff 46%, #f6efe4 100%);
+    padding: 28px 42px 28px;
+    background: linear-gradient(112deg, #fffaf3 0%, #fff 54%, #f6efe4 100%);
 }
 
-.funnel-hero::before {
-    content: "";
-    position: absolute;
-    right: -140px;
-    top: -120px;
-    width: 430px;
-    height: 430px;
-    border-radius: 50%;
-    background: rgba(255, 137, 9, 0.14);
-}
-
+.funnel-hero::before,
 .funnel-hero::after {
-    content: "";
-    position: absolute;
-    right: 28px;
-    bottom: 30px;
-    width: 180px;
-    height: 180px;
-    border: 2px dashed rgba(251, 116, 4, 0.32);
-    border-radius: 50%;
+    display: none;
 }
 
 .funnel-copy {
     position: relative;
     z-index: 3;
-    max-width: 540px;
+    max-width: 500px;
 }
 
 .funnel-badge {
     display: inline-flex;
     align-items: center;
-    min-height: 52px;
-    padding: 0 22px;
+    min-height: 42px;
+    padding: 0 18px;
     border-radius: 14px;
     color: #fff;
     background: linear-gradient(135deg, #ff9a05, #f05a00);
-    font-size: clamp(18px, 2.2vw, 23px);
+    font-size: clamp(17px, 1.9vw, 21px);
     font-weight: 900;
     box-shadow: 0 10px 22px rgba(240, 90, 0, 0.24);
 }
 
 .funnel-copy h1 {
-    max-width: 520px;
-    margin: 22px 0 12px;
+    max-width: 480px;
+    margin: 18px 0 10px;
     color: #151515;
-    font-size: clamp(44px, 5vw, 68px);
-    line-height: 1.04;
+    font-size: clamp(40px, 4.2vw, 56px);
+    line-height: 1.02;
     letter-spacing: 0;
+    text-wrap: balance;
 }
 
 .funnel-copy p {
-    max-width: 500px;
-    margin: 0 0 18px;
+    max-width: 440px;
+    margin: 0 0 16px;
     color: #2d2d2d;
-    font-size: clamp(20px, 2.45vw, 28px);
+    font-size: clamp(19px, 2vw, 24px);
     font-weight: 800;
     line-height: 1.25;
 }
 
 .offer-card {
     position: relative;
-    width: min(460px, 100%);
+    width: min(420px, 100%);
     display: grid;
     gap: 2px;
     border: 1px solid #fed7aa;
-    border-radius: 18px;
-    padding: 14px 22px 16px;
+    border-radius: 14px;
+    padding: 12px 20px 14px;
     background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 18px 42px rgba(103, 69, 28, 0.12);
+    box-shadow: 0 14px 34px rgba(103, 69, 28, 0.1);
 }
 
 .offer-card del {
     color: #1f2937;
-    font-size: 24px;
+    font-size: 21px;
     font-weight: 900;
     text-decoration-thickness: 4px;
     text-decoration-color: #dc2626;
@@ -858,29 +840,29 @@ select:focus {
 
 .offer-card span {
     color: #111827;
-    font-size: 22px;
+    font-size: 19px;
     font-weight: 900;
 }
 
 .offer-card strong {
     color: #fb7404;
-    font-size: clamp(62px, 8.6vw, 94px);
+    font-size: clamp(58px, 7vw, 82px);
     line-height: 0.96;
     font-weight: 900;
 }
 
 .offer-card em {
     position: absolute;
-    right: -22px;
+    right: 14px;
     top: 50%;
-    width: 86px;
-    height: 86px;
+    width: 76px;
+    height: 76px;
     display: grid;
     place-items: center;
     border-radius: 16px;
     color: #fff;
     background: #ef271c;
-    font-size: 24px;
+    font-size: 20px;
     font-style: normal;
     font-weight: 900;
     transform: translateY(-50%) rotate(-8deg);
@@ -889,8 +871,8 @@ select:focus {
 
 .funnel-cta,
 .funnel-submit {
-    width: min(460px, 100%);
-    min-height: 64px;
+    width: min(420px, 100%);
+    min-height: 56px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -900,12 +882,12 @@ select:focus {
     color: #fff;
     background: linear-gradient(135deg, #ff9a05, #f05a00);
     box-shadow: 0 14px 26px rgba(240, 90, 0, 0.28);
-    font-size: clamp(22px, 2.8vw, 32px);
+    font-size: clamp(21px, 2.4vw, 28px);
     font-weight: 900;
 }
 
 .delivery-strip {
-    width: min(520px, 100%);
+    width: min(440px, 100%);
     display: grid;
     grid-template-columns: 1fr 1fr;
     margin-top: 14px;
@@ -918,7 +900,7 @@ select:focus {
 .delivery-strip div {
     display: grid;
     gap: 4px;
-    padding: 14px 16px;
+    padding: 10px 12px;
     border: 1px solid #fed7aa;
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.92);
@@ -930,42 +912,35 @@ select:focus {
 
 .delivery-strip strong {
     color: #111827;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .delivery-strip span {
     color: #374151;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 800;
 }
 
 .hero-product {
     position: relative;
     z-index: 2;
-    min-height: 570px;
-    display: block;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
 }
 
 .hero-main-img {
     width: 100%;
-    height: 570px;
-    border: 10px solid #fff;
-    border-radius: 30px;
+    height: min(500px, 52vw);
+    border: 8px solid #fff;
+    border-radius: 24px;
     object-fit: cover;
     object-position: center;
-    box-shadow: 0 28px 70px rgba(54, 44, 34, 0.2);
+    box-shadow: 0 22px 56px rgba(54, 44, 34, 0.18);
 }
 
 .hero-demo-img {
-    position: absolute;
-    right: -10px;
-    bottom: -16px;
-    width: min(214px, 34%);
-    aspect-ratio: 1 / 1;
-    border: 10px solid #fff;
-    border-radius: 50%;
-    object-fit: cover;
-    box-shadow: 0 20px 42px rgba(42, 34, 26, 0.22);
+    display: none;
 }
 
 .funnel-section {
@@ -1102,29 +1077,29 @@ select:focus {
 
 .funnel-order {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(340px, 0.88fr);
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.82fr);
     gap: 16px;
-    padding: 20px 42px 36px;
+    padding: 18px 42px 46px;
 }
 
 .order-card {
     border: 1px solid #fed7aa;
-    border-radius: 16px;
-    padding: 20px 24px;
+    border-radius: 12px;
+    padding: 16px 18px;
     background: #fff;
 }
 
 .order-card h2 {
     justify-content: flex-start;
-    margin-bottom: 14px;
-    font-size: clamp(24px, 3.2vw, 34px);
+    margin-bottom: 10px;
+    font-size: clamp(22px, 2.6vw, 30px);
     text-align: left;
 }
 
 .form-label {
-    margin: 12px 0 8px;
+    margin: 10px 0 7px;
     color: #111827;
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 900;
 }
 
@@ -1149,14 +1124,14 @@ select:focus {
 }
 
 .pill-options span {
-    min-height: 52px;
+    min-height: 44px;
     display: grid;
     place-items: center;
     border: 1px solid #d7dde5;
     border-radius: 10px;
     background: #fff;
     color: #111827;
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 900;
     cursor: pointer;
 }
@@ -1167,21 +1142,39 @@ select:focus {
     background: linear-gradient(135deg, #ff9a05, #f05a00);
 }
 
-.order-card input,
-.order-card textarea {
-    margin-top: 10px;
+.order-card > label > input,
+.order-card textarea,
+.order-card .phone-field {
+    margin-top: 8px;
+}
+
+.order-card > label > input,
+.order-card textarea,
+.order-card .phone-field input {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.order-card .phone-field input {
+    margin-top: 0;
+}
+
+.order-card .phone-prefix {
+    min-height: 42px;
 }
 
 .funnel-submit {
     width: 100%;
-    margin-top: 12px;
-    font-size: 24px;
+    margin-top: 10px;
+    min-height: 52px;
+    font-size: 22px;
 }
 
 .secure-note {
-    margin: 10px 0 0;
+    margin: 8px 0 0;
     color: #6b7280;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 800;
     text-align: center;
 }
@@ -1197,9 +1190,9 @@ select:focus {
     justify-content: space-between;
     gap: 14px;
     border-bottom: 1px solid #eadfd2;
-    padding: 14px 0;
+    padding: 11px 0;
     color: #222;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .summary-row strong,
@@ -1210,14 +1203,47 @@ select:focus {
 .summary-total {
     border: 1px solid #fed7aa;
     border-radius: 12px;
-    margin-top: 16px;
-    padding: 18px;
-    font-size: 26px;
+    margin-top: 12px;
+    padding: 15px;
+    font-size: 22px;
     font-weight: 900;
 }
 
 .summary-total strong {
     color: #f05a00;
+}
+
+.sticky-order-cta {
+    position: fixed;
+    left: 50%;
+    bottom: 14px;
+    z-index: 50;
+    width: min(460px, calc(100% - 24px));
+    min-height: 56px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-radius: 999px;
+    color: #fff;
+    background: linear-gradient(135deg, #ff9a05, #f05a00);
+    box-shadow: 0 18px 34px rgba(240, 90, 0, 0.34);
+    font-size: 22px;
+    font-weight: 900;
+    transform: translateX(-50%);
+}
+
+.sticky-order-cta strong {
+    color: #fff;
+    padding-left: 12px;
+    border-left: 1px solid rgba(255, 255, 255, 0.42);
+    font-size: 18px;
+}
+
+@media print {
+    .sticky-order-cta {
+        display: none;
+    }
 }
 
 @media (max-width: 980px) {
@@ -1226,12 +1252,21 @@ select:focus {
         grid-template-columns: 1fr;
     }
 
+    .funnel-hero {
+        gap: 24px;
+        padding: 26px 24px 22px;
+    }
+
+    .funnel-copy {
+        max-width: none;
+    }
+
     .hero-product {
         min-height: auto;
     }
 
     .hero-main-img {
-        height: min(560px, 72vw);
+        height: min(520px, 72vw);
     }
 
     .feature-grid {
@@ -1269,7 +1304,7 @@ select:focus {
     }
 
     .funnel-copy h1 {
-        font-size: 38px;
+        font-size: 36px;
     }
 
     .offer-card em {
@@ -1302,5 +1337,21 @@ select:focus {
     .usage-card,
     .usage-card img {
         min-height: 220px;
+    }
+
+    .hero-main-img {
+        height: min(430px, 88vw);
+        border-width: 6px;
+        border-radius: 18px;
+    }
+
+    .sticky-order-cta {
+        bottom: 10px;
+        min-height: 52px;
+        font-size: 20px;
+    }
+
+    .sticky-order-cta strong {
+        font-size: 16px;
     }
 }
