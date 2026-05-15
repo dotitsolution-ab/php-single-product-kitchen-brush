@@ -24,6 +24,8 @@ return [
     ],
     'security' => [
         'session_name' => 'sp_store_session',
+        'admin_idle_timeout_minutes' => 60,
+        'login_max_attempts' => 5,
+        'login_decay_minutes' => 15,
     ],
 ];
-

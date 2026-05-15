@@ -158,6 +158,16 @@ After every deploy:
 - Check invoice page.
 - If courier logic changed, test Steadfast on one order.
 
+### Security Update Notes
+
+After pulling the security hardening update:
+
+- Open admin login once. The app will create security tables automatically if the database user has `CREATE` permission.
+- If auto-create is disabled by hosting permissions, import `database/security_migration.sql` from phpMyAdmin.
+- Confirm `/install.php` is deleted or renamed on the live server.
+- Confirm `config.php` exists only on the server and is not committed to Git.
+- In cPanel, keep PHP `display_errors` off for production.
+
 ### Emergency Manual Update
 
 If Git is not available in cPanel, upload changed files with File Manager or FTP/SFTP.

@@ -11,10 +11,14 @@ if (Auth::check()) {
 $error = null;
 if (is_post()) {
     verify_csrf();
-    if (Auth::attempt((string)($_POST['email'] ?? ''), (string)($_POST['password'] ?? ''))) {
-        redirect('admin/index.php');
+    try {
+        if (Auth::attempt((string)($_POST['email'] ?? ''), (string)($_POST['password'] ?? ''))) {
+            redirect('admin/index.php');
+        }
+        $error = 'Invalid admin email or password.';
+    } catch (Throwable $exception) {
+        $error = $exception->getMessage();
     }
-    $error = 'Invalid admin email or password.';
 }
 ?>
 <!doctype html>
@@ -46,4 +50,3 @@ if (is_post()) {
 </main>
 </body>
 </html>
-

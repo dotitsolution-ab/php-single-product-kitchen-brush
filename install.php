@@ -7,6 +7,18 @@ require_once __DIR__ . '/bootstrap.php';
 $error = null;
 $success = null;
 $configExists = file_exists(BASE_PATH . '/config.php');
+$alreadyInstalled = false;
+
+if ($configExists) {
+    try {
+        $table = db()->query("SHOW TABLES LIKE 'admin_users'")->fetchColumn();
+        if ($table) {
+            $alreadyInstalled = (int)db()->query('SELECT COUNT(*) FROM admin_users')->fetchColumn() > 0;
+        }
+    } catch (Throwable) {
+        $alreadyInstalled = false;
+    }
+}
 
 if (is_post()) {
     verify_csrf();
@@ -15,6 +27,9 @@ if (is_post()) {
     $password = (string)($_POST['password'] ?? '');
 
     try {
+        if ($alreadyInstalled) {
+            throw new RuntimeException('This store is already installed. Delete or rename install.php.');
+        }
         if (!$configExists) {
             throw new RuntimeException('Create config.php from config.sample.php before installation.');
         }
@@ -52,6 +67,7 @@ if (is_post()) {
         ]);
 
         $success = 'Installation complete. Delete or rename install.php, then log in.';
+        $alreadyInstalled = true;
     } catch (Throwable $exception) {
         $error = $exception->getMessage();
     }
@@ -69,6 +85,9 @@ if (is_post()) {
 <main class="installer">
     <form class="content-panel installer-panel" method="post">
         <h1>Install Store</h1>
+        <?php if ($alreadyInstalled): ?>
+            <div class="alert alert-error">This store is already installed. Delete or rename install.php for security.</div>
+        <?php endif; ?>
         <?php if (!$configExists): ?>
             <div class="alert alert-error">Copy config.sample.php to config.php and set your database credentials first.</div>
         <?php endif; ?>
@@ -78,20 +97,22 @@ if (is_post()) {
         <?php if ($success): ?>
             <div class="alert alert-success"><?= e($success) ?> <a href="<?= e(base_url('admin/login.php')) ?>">Admin login</a></div>
         <?php endif; ?>
-        <?= csrf_field() ?>
-        <label>
-            Admin Name
-            <input type="text" name="name" required>
-        </label>
-        <label>
-            Admin Email
-            <input type="email" name="email" required>
-        </label>
-        <label>
-            Admin Password
-            <input type="password" name="password" required minlength="8">
-        </label>
-        <button class="button button-primary button-full" type="submit">Run Install</button>
+        <?php if (!$alreadyInstalled): ?>
+            <?= csrf_field() ?>
+            <label>
+                Admin Name
+                <input type="text" name="name" required>
+            </label>
+            <label>
+                Admin Email
+                <input type="email" name="email" required>
+            </label>
+            <label>
+                Admin Password
+                <input type="password" name="password" required minlength="8">
+            </label>
+            <button class="button button-primary button-full" type="submit">Run Install</button>
+        <?php endif; ?>
     </form>
 </main>
 </body>

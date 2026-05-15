@@ -21,6 +21,7 @@ $pageTitle = $pageTitle ?? 'Admin';
         <a href="<?= e(base_url('admin/orders.php')) ?>">Orders</a>
         <a href="<?= e(base_url('admin/product.php')) ?>">Product</a>
         <a href="<?= e(base_url('admin/settings.php')) ?>">Settings</a>
+        <a href="<?= e(base_url('admin/security.php')) ?>">Security</a>
         <a href="<?= e(base_url('/')) ?>" target="_blank" rel="noopener">View Store</a>
         <a href="<?= e(base_url('admin/logout.php')) ?>">Logout</a>
     </nav>
@@ -38,4 +39,3 @@ $pageTitle = $pageTitle ?? 'Admin';
     <?php if ($message = flash('error')): ?>
         <div class="alert alert-error"><?= e($message) ?></div>
     <?php endif; ?>
-
