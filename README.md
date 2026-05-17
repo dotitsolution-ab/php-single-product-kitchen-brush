@@ -39,9 +39,10 @@ DEPLOY_PASSWORD=your_password
 DEPLOY_REMOTE_PATH=/public_html/
 DEPLOY_PROTOCOL=sftp
 DEPLOY_FTP_SSL=false
+DEPLOY_SSL_VERIFY=true
 ```
 
-`DEPLOY_PROTOCOL` হতে পারে `sftp` অথবা `ftp`। cPanel explicit FTPS দিলে `DEPLOY_PROTOCOL=ftp` এবং `DEPLOY_FTP_SSL=true` দিন। Script `curl.exe` ব্যবহার করে, তাই Windows-এ `curl.exe` available থাকতে হবে এবং SFTP/FTPS ব্যবহার করলে curl build-এ সেই support থাকতে হবে।
+`DEPLOY_PROTOCOL` হতে পারে `sftp` অথবা `ftp`। cPanel explicit FTPS দিলে `DEPLOY_PROTOCOL=ftp` এবং `DEPLOY_FTP_SSL=true` দিন। Certificate hostname mismatch হলে শুধু trusted cPanel server-এর জন্য `DEPLOY_SSL_VERIFY=false` ব্যবহার করুন। Script `curl.exe` ব্যবহার করে, তাই Windows-এ `curl.exe` available থাকতে হবে এবং SFTP/FTPS ব্যবহার করলে curl build-এ সেই support থাকতে হবে।
 
 ### 2. One-time deploy
 
