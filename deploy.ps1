@@ -151,6 +151,7 @@ function Upload-File {
     $remotePath = Join-RemotePath $script:RemoteRoot $RelativePath
     $encodedRemotePath = ConvertTo-RemoteUrlPath $remotePath
     $url = "{0}://{1}:{2}{3}" -f $script:Protocol, $script:HostName, $script:Port, $encodedRemotePath
+    $curlLocalPath = $LocalPath.Replace('\', '/')
 
     $configFile = [System.IO.Path]::GetTempFileName()
     try {
@@ -161,7 +162,7 @@ function Upload-File {
             "ftp-create-dirs",
             "connect-timeout = 20",
             "user = `"$script:UserName`:$script:Password`"",
-            "upload-file = `"$LocalPath`"",
+            "upload-file = `"$curlLocalPath`"",
             "url = `"$url`""
         )
         if ($script:Protocol -eq "ftp" -and $script:FtpSsl) {
