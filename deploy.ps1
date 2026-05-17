@@ -164,6 +164,9 @@ function Upload-File {
             "upload-file = `"$LocalPath`"",
             "url = `"$url`""
         )
+        if ($script:Protocol -eq "ftp" -and $script:FtpSsl) {
+            $curlConfig += "ssl-reqd"
+        }
         Set-Content -LiteralPath $configFile -Value $curlConfig -Encoding ASCII
 
         & $script:CurlPath --config $configFile
@@ -229,6 +232,7 @@ $script:Port = if ($envValues.ContainsKey("DEPLOY_PORT") -and -not [string]::IsN
 $script:UserName = Require-DeployValue $envValues "DEPLOY_USER"
 $script:Password = Require-DeployValue $envValues "DEPLOY_PASSWORD"
 $script:RemoteRoot = Require-DeployValue $envValues "DEPLOY_REMOTE_PATH"
+$script:FtpSsl = ($envValues.ContainsKey("DEPLOY_FTP_SSL") -and [string]$envValues["DEPLOY_FTP_SSL"] -match "^(1|true|yes|on)$")
 $script:CurlPath = (Get-Command "curl.exe" -ErrorAction SilentlyContinue).Source
 if (-not $script:CurlPath) {
     throw "curl.exe was not found. Install curl or use a Windows version that includes curl.exe."

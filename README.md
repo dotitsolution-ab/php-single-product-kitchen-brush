@@ -38,9 +38,10 @@ DEPLOY_USER=cpanel_user
 DEPLOY_PASSWORD=your_password
 DEPLOY_REMOTE_PATH=/public_html/
 DEPLOY_PROTOCOL=sftp
+DEPLOY_FTP_SSL=false
 ```
 
-`DEPLOY_PROTOCOL` হতে পারে `sftp` অথবা `ftp`। Script `curl.exe` ব্যবহার করে, তাই Windows-এ `curl.exe` available থাকতে হবে এবং SFTP ব্যবহার করলে curl build-এ SFTP support থাকতে হবে।
+`DEPLOY_PROTOCOL` হতে পারে `sftp` অথবা `ftp`। cPanel explicit FTPS দিলে `DEPLOY_PROTOCOL=ftp` এবং `DEPLOY_FTP_SSL=true` দিন। Script `curl.exe` ব্যবহার করে, তাই Windows-এ `curl.exe` available থাকতে হবে এবং SFTP/FTPS ব্যবহার করলে curl build-এ সেই support থাকতে হবে।
 
 ### 2. One-time deploy
 
