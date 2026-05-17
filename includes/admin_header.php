@@ -22,6 +22,7 @@ $pageTitle = $pageTitle ?? 'Admin';
         <a href="<?= e(base_url('admin/product.php')) ?>">Product</a>
         <a href="<?= e(base_url('admin/media.php')) ?>">Media</a>
         <a href="<?= e(base_url('admin/email.php')) ?>">Notifications</a>
+        <a href="<?= e(base_url('admin/update.php')) ?>">Updates</a>
         <a href="<?= e(base_url('admin/settings.php')) ?>">Settings</a>
         <a href="<?= e(base_url('admin/security.php')) ?>">Security</a>
         <a href="<?= e(base_url('/')) ?>" target="_blank" rel="noopener">View Store</a>

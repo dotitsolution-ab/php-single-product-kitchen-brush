@@ -101,6 +101,14 @@ Dangerous SQL যেমন `DROP TABLE` বা `DROP DATABASE` থাকলে r
 php scripts/migrate.php --force
 ```
 
+SSH/Terminal না থাকলে admin panel থেকে run করুন:
+
+```text
+/admin/update.php
+```
+
+এই page শুধু logged-in admin দেখতে পারবে। Dangerous SQL থাকলে আগে SQL review করে `RUN` টাইপ করতে হবে। Public URL দিয়ে `/install.php` বারবার run করবেন না।
+
 ### Test/run checklist
 
 ```powershell

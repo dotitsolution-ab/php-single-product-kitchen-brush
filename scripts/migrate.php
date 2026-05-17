@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+$root = dirname(__DIR__);
+require_once $root . '/includes/Migrator.php';
+
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     exit('Migration runner is CLI only.');
 }
 
-$root = dirname(__DIR__);
 $force = in_array('--force', $argv, true);
 $env = read_env_file($root . '/.env');
 
@@ -25,69 +27,31 @@ $pdo = new PDO($dsn, $username, $password, [
     PDO::ATTR_EMULATE_PREPARES => false,
 ]);
 
-$pdo->exec(
-    'CREATE TABLE IF NOT EXISTS database_migrations (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        migration VARCHAR(255) NOT NULL UNIQUE,
-        checksum CHAR(64) NOT NULL,
-        batch INT NOT NULL DEFAULT 1,
-        ran_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
-);
-
-$ran = [];
-foreach ($pdo->query('SELECT migration FROM database_migrations')->fetchAll() as $row) {
-    $ran[(string)$row['migration']] = true;
-}
-
-$files = glob($root . '/database/migrations/*.sql') ?: [];
-sort($files, SORT_STRING);
-
-$pending = array_values(array_filter($files, static function (string $file) use ($ran): bool {
-    return empty($ran[basename($file)]);
-}));
+$migrator = new Migrator($pdo, $root);
+$pending = $migrator->pendingMigrations();
 
 if (!$pending) {
     echo "No pending migrations.\n";
     exit(0);
 }
 
-$batch = ((int)$pdo->query('SELECT COALESCE(MAX(batch), 0) FROM database_migrations')->fetchColumn()) + 1;
-
-foreach ($pending as $file) {
-    $name = basename($file);
-    $sql = file_get_contents($file);
-    if ($sql === false) {
-        throw new RuntimeException("Could not read migration: {$name}");
+$dangerous = array_filter($pending, static fn (array $migration): bool => (bool)$migration['dangerous']);
+if ($dangerous && !$force) {
+    echo "Dangerous SQL detected in pending migrations (DROP TABLE / DROP DATABASE):\n";
+    foreach ($dangerous as $migration) {
+        echo "- {$migration['name']}\n";
     }
-
-    if (contains_dangerous_sql($sql) && !$force) {
-        echo "Dangerous SQL detected in {$name} (DROP TABLE / DROP DATABASE).\n";
-        echo "Type RUN to execute this migration: ";
-        $answer = trim((string)fgets(STDIN));
-        if ($answer !== 'RUN') {
-            echo "Skipped {$name}.\n";
-            exit(1);
-        }
+    echo "Type RUN to execute these migrations: ";
+    $answer = trim((string)fgets(STDIN));
+    if ($answer !== 'RUN') {
+        echo "Skipped migrations.\n";
+        exit(1);
     }
-
-    echo "Running {$name}...\n";
-    foreach (split_sql_statements($sql) as $statement) {
-        $statement = trim($statement);
-        if ($statement === '') {
-            continue;
-        }
-        $pdo->exec($statement);
-    }
-
-    $stmt = $pdo->prepare('INSERT INTO database_migrations (migration, checksum, batch) VALUES (:migration, :checksum, :batch)');
-    $stmt->execute([
-        'migration' => $name,
-        'checksum' => hash('sha256', $sql),
-        'batch' => $batch,
-    ]);
-    echo "Done {$name}.\n";
 }
+
+$migrator->runPending($force || $dangerous !== [], static function (string $message): void {
+    echo $message . "\n";
+});
 
 echo "Migrations complete.\n";
 
@@ -131,53 +95,4 @@ function require_env(array $env, string $key): string
     }
 
     return $value;
-}
-
-function contains_dangerous_sql(string $sql): bool
-{
-    return preg_match('/\bDROP\s+(TABLE|DATABASE)\b/i', $sql) === 1;
-}
-
-function split_sql_statements(string $sql): array
-{
-    $statements = [];
-    $buffer = '';
-    $quote = null;
-    $escaped = false;
-    $length = strlen($sql);
-
-    for ($i = 0; $i < $length; $i++) {
-        $char = $sql[$i];
-        $buffer .= $char;
-
-        if ($quote !== null) {
-            if ($char === '\\' && !$escaped) {
-                $escaped = true;
-                continue;
-            }
-
-            if ($char === $quote && !$escaped) {
-                $quote = null;
-            }
-
-            $escaped = false;
-            continue;
-        }
-
-        if ($char === "'" || $char === '"' || $char === '`') {
-            $quote = $char;
-            continue;
-        }
-
-        if ($char === ';') {
-            $statements[] = substr($buffer, 0, -1);
-            $buffer = '';
-        }
-    }
-
-    if (trim($buffer) !== '') {
-        $statements[] = $buffer;
-    }
-
-    return $statements;
 }
